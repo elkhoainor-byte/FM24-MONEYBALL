@@ -156,6 +156,13 @@ const roleProfiles = {
     ]
   }
 };
+
+function matchesPosition(playerPos, allowed) {
+  if (!playerPos) return false;
+  const pos = playerPos.toUpperCase().replace(/\s+/g, '');
+  return allowed.some(a => pos.includes(a.toUpperCase()));
+}
+  
 function normalize(s) {
   return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\/\%]/g,' ').replace(/\s+/g,' ').trim();
 }
