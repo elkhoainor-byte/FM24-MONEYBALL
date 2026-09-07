@@ -58,65 +58,104 @@
 
 <script>
 const roleProfiles = {
-  GK: { name: "Portero Cierre – Ataque", metrics: [
-    {keys:["xg evitados","goles esperados evitados"], weight:2.2},
-    {keys:["ratio de paradas","ratio paradas"], weight:1.5},
-    {keys:["pases completados/90","pases completados"], weight:1.4},
-    {keys:["pases progresivos/90","pases progresivos"], weight:1.3},
-    {keys:["posesiones perdidas"], weight:-1.4},
-    {keys:["errores que costaron goles"], weight:-2.5}
-  ]},
-  CB: { name: "Defensa con Toque – Defensa", metrics: [
-    {keys:["pases progresivos/90","pases progresivos"], weight:1.9},
-    {keys:["% pase","ratio de pases"], weight:1.3},
-    {keys:["rob/90","posesiones ganadas"], weight:1.6},
-    {keys:["ent p","entradas clave"], weight:1.3},
-    {keys:["presiones"], weight:1.2},
-    {keys:["errores que costaron goles"], weight:-2.8}
-  ]},
-  WB: { name: "Carrilero – Apoyo", metrics: [
-    {keys:["presiones"], weight:2.0},
-    {keys:["pases progresivos"], weight:1.7},
-    {keys:["centros"], weight:1.5},
-    {keys:["distancia cubierta"], weight:1.3},
-    {keys:["% pase"], weight:1.2}
-  ]},
-  DM: { name: "Pivote Organizador – Defensa", metrics: [
-    {keys:["pases progresivos"], weight:1.8},
-    {keys:["% pase"], weight:1.5},
-    {keys:["rob/90","posesiones ganadas"], weight:1.7},
-    {keys:["presiones"], weight:1.4},
-    {keys:["pases clave"], weight:1.2}
-  ]},
-  CM: { name: "Centrocampista – Apoyo", metrics: [
-    {keys:["presiones"], weight:2.0},
-    {keys:["pases progresivos"], weight:1.7},
-    {keys:["distancia cubierta"], weight:1.4},
-    {keys:["rob/90"], weight:1.3},
-    {keys:["pases clave"], weight:1.2}
-  ]},
-  AP: { name: "Organizador Adelantado – Ataque", metrics: [
-    {keys:["pases clave"], weight:2.2},
-    {keys:["ocasiones claras"], weight:2.0},
-    {keys:["pases progresivos"], weight:1.6},
-    {keys:["xg","goles esperados"], weight:1.4}
-  ]},
-  IF: { name: "Delantero Interior – Apoyo", metrics: [
-    {keys:["ocasiones claras"], weight:2.0},
-    {keys:["pases clave"], weight:1.8},
-    {keys:["xg"], weight:1.6},
-    {keys:["pases progresivos"], weight:1.4},
-    {keys:["presiones"], weight:1.3}
-  ]},
-  F9: { name: "Falso Nueve – Apoyo", metrics: [
-    {keys:["ocasiones claras"], weight:2.3},
-    {keys:["pases clave"], weight:2.1},
-    {keys:["pases progresivos"], weight:1.6},
-    {keys:["xg","goles esperados"], weight:1.5},
-    {keys:["presiones"], weight:1.4}
-  ]}
+  GK: {
+    name: "Portero Cierre – Ataque",
+    description: "Solo porteros (POR) · xG evitados + distribución + seguridad",
+    positions: ["POR"],
+    metrics: [
+      {keys:["xg evitados","goles esperados evitados"], weight:2.2},
+      {keys:["ratio de paradas","ratio paradas"], weight:1.5},
+      {keys:["pases completados/90","pases completados"], weight:1.4},
+      {keys:["pases progresivos/90","pases progresivos"], weight:1.3},
+      {keys:["posesiones perdidas"], weight:-1.4},
+      {keys:["errores que costaron goles"], weight:-2.5}
+    ]
+  },
+  WB: {
+    name: "Carrilero – Apoyo",
+    description: "Laterales / Carrileros (DF) · Presión + progresión + centros",
+    positions: ["DF"],
+    metrics: [
+      {keys:["presiones"], weight:2.0},
+      {keys:["pases progresivos"], weight:1.7},
+      {keys:["centros"], weight:1.5},
+      {keys:["distancia cubierta"], weight:1.3},
+      {keys:["% pase"], weight:1.2}
+    ]
+  },
+  CB: {
+    name: "Defensa con Toque – Defensa",
+    description: "Centrales (DF) · Salida limpia + recuperación + cero errores",
+    positions: ["DF"],
+    metrics: [
+      {keys:["pases progresivos"], weight:1.9},
+      {keys:["% pase","ratio de pases"], weight:1.3},
+      {keys:["rob/90","posesiones ganadas"], weight:1.6},
+      {keys:["ent p","entradas clave"], weight:1.3},
+      {keys:["presiones"], weight:1.2},
+      {keys:["errores que costaron goles"], weight:-2.8}
+    ]
+  },
+  DM: {
+    name: "Pivote Organizador – Defensa",
+    description: "Pivotes / Mediocentros defensivos (ME)",
+    positions: ["ME"],
+    metrics: [
+      {keys:["pases progresivos"], weight:1.8},
+      {keys:["% pase"], weight:1.5},
+      {keys:["rob/90","posesiones ganadas"], weight:1.7},
+      {keys:["presiones"], weight:1.4},
+      {keys:["pases clave"], weight:1.2}
+    ]
+  },
+  CM: {
+    name: "Centrocampista – Apoyo",
+    description: "Centrocampistas (MC)",
+    positions: ["MC"],
+    metrics: [
+      {keys:["presiones"], weight:2.0},
+      {keys:["pases progresivos"], weight:1.7},
+      {keys:["distancia cubierta"], weight:1.4},
+      {keys:["rob/90"], weight:1.3},
+      {keys:["pases clave"], weight:1.2}
+    ]
+  },
+  AP: {
+    name: "Organizador Adelantado – Ataque",
+    description: "Mediapuntas / Organizadores (MP)",
+    positions: ["MP"],
+    metrics: [
+      {keys:["pases clave"], weight:2.2},
+      {keys:["ocasiones claras"], weight:2.0},
+      {keys:["pases progresivos"], weight:1.6},
+      {keys:["xg","goles esperados"], weight:1.4}
+    ]
+  },
+  IF: {
+    name: "Delantero Interior – Apoyo",
+    description: "Extremos / Interiores (MP)",
+    positions: ["MP"],
+    metrics: [
+      {keys:["ocasiones claras"], weight:2.0},
+      {keys:["pases clave"], weight:1.8},
+      {keys:["xg"], weight:1.6},
+      {keys:["pases progresivos"], weight:1.4},
+      {keys:["presiones"], weight:1.3}
+    ]
+  },
+  F9: {
+    name: "Falso Nueve – Apoyo",
+    description: "Delanteros (DL)",
+    positions: ["DL"],
+    metrics: [
+      {keys:["ocasiones claras"], weight:2.3},
+      {keys:["pases clave"], weight:2.1},
+      {keys:["pases progresivos"], weight:1.6},
+      {keys:["xg","goles esperados"], weight:1.5},
+      {keys:["presiones"], weight:1.4}
+    ]
+  }
 };
-
 function normalize(s) {
   return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\/\%]/g,' ').replace(/\s+/g,' ').trim();
 }
