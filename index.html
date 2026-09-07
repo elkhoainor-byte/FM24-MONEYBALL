@@ -98,8 +98,8 @@ const roleProfiles = {
   },
   DM: {
     name: "Pivote Organizador – Defensa",
-    description: "Pivotes / Mediocentros (ME)",
-    positions: ["ME"],
+    description: "Pivotes (MC)",
+    positions: ["MC"],
     metrics: [
       {keys:["pases progresivos"], weight:1.8},
       {keys:["% pase"], weight:1.5},
@@ -110,8 +110,8 @@ const roleProfiles = {
   },
   CM: {
     name: "Centrocampista – Apoyo",
-    description: "Centrocampistas (MC)",
-    positions: ["MC"],
+    description: "Centrocampistas (ME)",
+    positions: ["ME"],
     metrics: [
       {keys:["presiones"], weight:2.0},
       {keys:["pases progresivos"], weight:1.7},
@@ -122,8 +122,8 @@ const roleProfiles = {
   },
   AP: {
     name: "Organizador Adelantado – Ataque",
-    description: "Mediapuntas / Organizadores (MP)",
-    positions: ["MP"],
+    description: "Organizador Adelantado (ME)",
+    positions: ["ME"],
     metrics: [
       {keys:["pases clave"], weight:2.2},
       {keys:["ocasiones claras"], weight:2.0},
@@ -156,7 +156,7 @@ const roleProfiles = {
     ]
   }
 };
-
+  
 function matchesPosition(playerPos, allowed) {
   if (!playerPos) return false;
   const pos = playerPos.toUpperCase().replace(/\s+/g, '');
