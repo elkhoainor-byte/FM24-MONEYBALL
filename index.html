@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FM24 Moneyball – Automático</title>
+<title>FM24 Moneyball Automático</title>
 <style>
   :root{--bg:#0b1120;--card:#1e293b;--accent:#22d3ee;--text:#e2e8f0;--good:#4ade80;--mid:#facc15;--bad:#f87171}
   *{box-sizing:border-box;margin:0;padding:0}
@@ -28,7 +28,7 @@
 <body>
 <div class="container">
   <h1>⚽ FM24 Moneyball Automático</h1>
-  <p style="opacity:.8;margin-bottom:20px">Sube el archivo con TODAS las stats → elige el rol → Top 3 automático según tu táctica</p>
+  <p style="opacity:.8;margin-bottom:20px">Versión adaptada a la tabla real de FM (columna "Nombre")</p>
 
   <div class="card">
     <h2>1. Elige el rol</h2>
@@ -40,17 +40,17 @@
       <option value="CM">Centrocampista – Apoyo</option>
       <option value="AP">Organizador Adelantado – Ataque</option>
       <option value="IF">Delantero Interior – Apoyo</option>
-      <option value="F9">Falso Nueve – Apoyo</option>
+      <option value="F9" selected>Falso Nueve – Apoyo</option>
     </select>
     <div id="roleDescription" class="role-desc"></div>
   </div>
 
   <div class="card">
     <h2>2. Archivo con TODAS las estadísticas</h2>
-    <p class="info">Acepta el HTML exportado de FM, CSV o texto pegado. Cuantas más columnas tenga, mejor (la app filtra sola).</p>
-    <input type="file" id="fileInput" accept=".html,.htm,.csv,.txt,.tsv">
-    <textarea id="rawData" rows="8" placeholder="O pega aquí la tabla completa..."></textarea>
-    <button onclick="calculate()">Calcular Top 3 automáticamente</button>
+    <p class="info">Sube el .html que exporta FM o pégalo directamente.</p>
+    <input type="file" id="fileInput" accept=".html,.htm,.csv,.txt">
+    <textarea id="rawData" rows="7" placeholder="Pega aquí el contenido del HTML de FM..."></textarea>
+    <button onclick="calculate()">Calcular Top 3</button>
   </div>
 
   <div class="card">
@@ -63,90 +63,90 @@
 const roleProfiles = {
   GK: {
     name: "Portero Cierre – Ataque",
-    description: "xG evitados + distribución corta y progresiva + cero errores",
+    description: "xG evitados + distribución + seguridad",
     metrics: [
-      {keys:["xg evitados/90","goles esperados evitados/90","xg evitados","goles esperados evitados"], weight:2.3},
-      {keys:["ratio de paradas","ratio paradas"], weight:1.9},
-      {keys:["pases completados/90","pases completados /90"], weight:1.7},
-      {keys:["pases progresivos/90","pases progresivos /90"], weight:1.6},
-      {keys:["posesiones perdidas/90","posesiones perdidas /90"], weight:-1.5},
+      {keys:["xg evitados/90","goles esperados evitados/90","xg evitados"], weight:2.3},
+      {keys:["ratio de paradas","ratio paradas","paradas"], weight:1.8},
+      {keys:["pases completados/90"], weight:1.6},
+      {keys:["pases progresivos/90"], weight:1.4},
+      {keys:["posesiones perdidas/90"], weight:-1.5},
       {keys:["errores que costaron goles"], weight:-2.8}
     ]
   },
   WB: {
     name: "Carrilero – Apoyo",
-    description: "Presión + progresión + centros + intensidad física",
+    description: "Presión + progresión + centros + intensidad",
     metrics: [
-      {keys:["presiones completadas/90","presiones completadas /90"], weight:2.1},
-      {keys:["pases progresivos/90","pases progresivos /90"], weight:1.9},
-      {keys:["centros completados en juego abierto/90","centros completados en juego abierto /90"], weight:1.7},
-      {keys:["distancia cubierta/90","distancia cubierta /90"], weight:1.5},
-      {keys:["esprints de alta intensidad/90","esprints de alta intensidad /90"], weight:1.4},
-      {keys:["ratio de pases completados"], weight:1.3},
+      {keys:["presiones completadas/90","pres int/90","presiones"], weight:2.1},
+      {keys:["pases progresivos/90"], weight:1.8},
+      {keys:["centros completados en juego abierto/90","cen-ab"], weight:1.6},
+      {keys:["distancia cubierta/90"], weight:1.4},
+      {keys:["esprints de alta intensidad/90"], weight:1.3},
+      {keys:["ratio de pases completados","% pase"], weight:1.2},
       {keys:["posesiones perdidas/90"], weight:-1.3}
     ]
   },
   CB: {
     name: "Defensa con Toque – Defensa",
-    description: "Salida limpia + recuperación + cero errores (línea alta)",
+    description: "Salida limpia + recuperación + cero errores",
     metrics: [
-      {keys:["pases progresivos/90","pases progresivos /90"], weight:2.0},
-      {keys:["ratio de pases completados"], weight:1.9},
-      {keys:["posesiones ganadas/90","posesiones ganadas /90"], weight:1.7},
-      {keys:["entradas clave/90","entradas clave /90"], weight:1.5},
-      {keys:["presiones completadas/90"], weight:1.4},
+      {keys:["pases progresivos/90"], weight:2.0},
+      {keys:["ratio de pases completados","% pase"], weight:1.9},
+      {keys:["posesiones ganadas/90","rob/90"], weight:1.7},
+      {keys:["entradas clave/90","ent p"], weight:1.5},
+      {keys:["presiones completadas/90"], weight:1.3},
       {keys:["errores que costaron goles"], weight:-3.2},
       {keys:["posesiones perdidas/90"], weight:-1.6}
     ]
   },
   DM: {
     name: "Pivote Organizador – Defensa",
-    description: "Control + recuperación + pases seguros y progresivos",
+    description: "Control + recuperación + pases seguros",
     metrics: [
       {keys:["pases progresivos/90"], weight:1.9},
-      {keys:["ratio de pases completados"], weight:2.0},
-      {keys:["posesiones ganadas/90"], weight:1.8},
-      {keys:["presiones completadas/90"], weight:1.6},
-      {keys:["pases clave/90","pases clave /90"], weight:1.4},
+      {keys:["ratio de pases completados","% pase"], weight:2.0},
+      {keys:["posesiones ganadas/90","rob/90"], weight:1.8},
+      {keys:["presiones completadas/90"], weight:1.5},
+      {keys:["pases clave/90"], weight:1.3},
       {keys:["posesiones perdidas/90"], weight:-1.7},
       {keys:["errores que costaron goles"], weight:-2.4}
     ]
   },
   CM: {
     name: "Centrocampista – Apoyo",
-    description: "Intensidad + presión + progresión (box-to-box)",
+    description: "Intensidad + presión + progresión",
     metrics: [
       {keys:["presiones completadas/90"], weight:2.1},
       {keys:["pases progresivos/90"], weight:1.8},
-      {keys:["distancia cubierta/90"], weight:1.6},
-      {keys:["esprints de alta intensidad/90"], weight:1.5},
-      {keys:["posesiones ganadas/90"], weight:1.5},
-      {keys:["pases clave/90"], weight:1.3},
+      {keys:["distancia cubierta/90"], weight:1.5},
+      {keys:["esprints de alta intensidad/90"], weight:1.4},
+      {keys:["posesiones ganadas/90"], weight:1.4},
+      {keys:["pases clave/90"], weight:1.2},
       {keys:["posesiones perdidas/90"], weight:-1.4}
     ]
   },
   AP: {
     name: "Organizador Adelantado – Ataque",
-    description: "Creación de ocasiones + progresión + llegada",
+    description: "Creación + progresión + llegada",
     metrics: [
-      {keys:["pases clave/90","pases clave /90"], weight:2.3},
-      {keys:["ocasiones claras creadas/90","ocasiones claras creadas /90"], weight:2.1},
-      {keys:["pases progresivos/90"], weight:1.8},
-      {keys:["xg","goles esperados","goles esperados/90"], weight:1.4},
-      {keys:["presiones completadas/90"], weight:1.3},
+      {keys:["pases clave/90"], weight:2.3},
+      {keys:["ocasiones claras creadas/90"], weight:2.1},
+      {keys:["pases progresivos/90"], weight:1.7},
+      {keys:["xg","goles esperados"], weight:1.4},
+      {keys:["presiones completadas/90"], weight:1.2},
       {keys:["posesiones perdidas/90"], weight:-1.3}
     ]
   },
   IF: {
     name: "Delantero Interior – Apoyo",
-    description: "Llegada + creación + presión desde arriba",
+    description: "Llegada + creación + presión",
     metrics: [
       {keys:["ocasiones claras creadas/90"], weight:2.0},
       {keys:["pases clave/90"], weight:1.9},
-      {keys:["xg","goles esperados/90","goles esperados"], weight:1.7},
+      {keys:["xg","goles esperados"], weight:1.7},
       {keys:["pases progresivos/90"], weight:1.5},
-      {keys:["presiones completadas/90"], weight:1.5},
-      {keys:["centros completados en juego abierto/90"], weight:1.3},
+      {keys:["presiones completadas/90"], weight:1.4},
+      {keys:["centros completados en juego abierto/90"], weight:1.2},
       {keys:["posesiones perdidas/90"], weight:-1.3}
     ]
   },
@@ -156,11 +156,11 @@ const roleProfiles = {
     metrics: [
       {keys:["ocasiones claras creadas/90"], weight:2.4},
       {keys:["pases clave/90"], weight:2.2},
-      {keys:["pases progresivos/90"], weight:1.9},
-      {keys:["xg","goles esperados/90","goles esperados"], weight:1.6},
+      {keys:["pases progresivos/90"], weight:1.7},
+      {keys:["xg","goles esperados"], weight:1.6},
       {keys:["presiones completadas/90"], weight:1.5},
       {keys:["posesiones perdidas/90"], weight:-1.5},
-      {keys:["regates realizados","regates/90","regates realizados/90"], weight:-0.9}
+      {keys:["regates realizados","reg/90"], weight:-0.9}
     ]
   }
 };
@@ -173,6 +173,7 @@ document.getElementById('roleSelect').dispatchEvent(new Event('change'));
 function normalize(str) {
   return (str || '').toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\/]/g, ' ')
     .replace(/\s+/g, ' ').trim();
 }
 
@@ -181,21 +182,38 @@ function findValue(player, possibleKeys) {
   for (const target of possibleKeys) {
     const normTarget = normalize(target);
     for (const pk of playerKeys) {
-      if (normalize(pk).includes(normTarget) || normTarget.includes(normalize(pk))) {
-        const val = parseFloat(String(player[pk]).replace(',', '.').replace(/[^\d.-]/g, ''));
-        if (!isNaN(val)) return val;
+      const normPk = normalize(pk);
+      if (normPk.includes(normTarget) || normTarget.includes(normPk)) {
+        let raw = String(player[pk]).replace(',', '.').replace(/[^\d.-]/g, '');
+        let val = parseFloat(raw);
+        if (!isNaN(val)) return {value: val, column: pk};
       }
     }
   }
-  return 0;
+  return {value: 0, column: null};
+}
+
+function getPlayerName(p) {
+  // Prioridad absoluta a la columna "Nombre"
+  if (p['Nombre'] && p['Nombre'].trim() && p['Nombre'] !== '-') {
+    return p['Nombre'].replace(/\s+/g, ' ').trim();
+  }
+  // Fallbacks
+  const candidates = ['Name', 'Player', 'Jugador', 'Inf'];
+  for (const c of candidates) {
+    if (p[c] && p[c].trim() && p[c] !== '-' && p[c] !== '--') {
+      return p[c].replace(/\s+/g, ' ').trim();
+    }
+  }
+  return 'Desconocido';
 }
 
 function calculate() {
   const raw = document.getElementById('rawData').value.trim();
-  if (!raw) return alert('Sube o pega primero el archivo con las estadísticas');
+  if (!raw) return alert('Sube o pega el archivo');
 
   const players = parseTable(raw);
-  if (players.length === 0) return alert('No se detectaron jugadores. Revisa que el archivo tenga encabezados.');
+  if (players.length === 0) return alert('No se detectaron jugadores. ¿Estás pegando el HTML completo?');
 
   const roleKey = document.getElementById('roleSelect').value;
   const profile = roleProfiles[roleKey];
@@ -205,19 +223,20 @@ function calculate() {
     const details = [];
 
     profile.metrics.forEach(m => {
-      const value = findValue(p, m.keys);
-      score += value * m.weight;
-      if (Math.abs(m.weight) >= 1.4 && value !== 0) {
-        details.push(`${m.keys[0]}: ${value.toFixed(2)}`);
+      const result = findValue(p, m.keys);
+      score += result.value * m.weight;
+      if (Math.abs(m.weight) >= 1.4 && result.value !== 0) {
+        details.push(`${result.column || m.keys[0]}: ${result.value.toFixed(2)}`);
       }
     });
 
     return {
-      name: p.Name || p.Nombre || p.name || p.Jugador || 'Desconocido',
+      name: getPlayerName(p),
       club: p.Club || p.club || '',
-      age: p.Age || p.Edad || p.age || '',
+      age: p.Edad || p.Age || p.age || '',
+      pos: p.Posición || p.Position || p.Pos || '',
       score: Math.round(score * 10) / 10,
-      details: details.slice(0, 5)
+      details: details.slice(0, 6)
     };
   });
 
@@ -230,7 +249,7 @@ function calculate() {
     html += `<div class="player-card">
       <div style="font-size:12px;opacity:.6">#${i+1}</div>
       <h3>${p.name}</h3>
-      <div style="font-size:13px;opacity:.8">${p.age ? p.age+' años' : ''} ${p.club ? '· '+p.club : ''}</div>
+      <div style="font-size:13px;opacity:.8">${p.age ? p.age + ' años' : ''} ${p.pos ? '· ' + p.pos : ''} ${p.club ? '· ' + p.club : ''}</div>
       <div class="score ${cls}">${p.score}</div>
       <div class="stats-list">${p.details.map(d => `<div>${d}</div>`).join('')}</div>
     </div>`;
@@ -240,20 +259,37 @@ function calculate() {
 }
 
 function parseTable(raw) {
+  // Caso HTML de FM
   if (raw.includes('<table') || raw.includes('<tr')) {
     const div = document.createElement('div');
     div.innerHTML = raw;
     const rows = [...div.querySelectorAll('tr')];
     if (rows.length < 2) return [];
-    const headers = [...rows[0].querySelectorAll('th,td')].map(c => c.textContent.trim());
-    return rows.slice(1).map(row => {
+
+    // Buscamos la fila de encabezados (normalmente la primera con <th> o la que contiene "Nombre")
+    let headerRow = rows[0];
+    for (let r of rows) {
+      const text = r.textContent;
+      if (text.includes('Nombre') || text.includes('Name')) {
+        headerRow = r;
+        break;
+      }
+    }
+
+    const headers = [...headerRow.querySelectorAll('th, td')].map(c => c.textContent.trim());
+    const startIndex = rows.indexOf(headerRow) + 1;
+
+    return rows.slice(startIndex).map(row => {
       const cells = [...row.querySelectorAll('td')];
       const p = {};
-      headers.forEach((h, i) => p[h] = cells[i] ? cells[i].textContent.trim() : '');
+      headers.forEach((h, i) => {
+        p[h] = cells[i] ? cells[i].textContent.trim() : '';
+      });
       return p;
-    }).filter(p => p.Name || p.Nombre || p.name || p.Jugador);
+    }).filter(p => p.Nombre || p.Name || p.nombre);
   }
 
+  // Fallback texto
   const lines = raw.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return [];
   const sep = lines[0].includes('\t') ? '\t' : lines[0].includes(';') ? ';' : ',';
@@ -263,7 +299,7 @@ function parseTable(raw) {
     const p = {};
     headers.forEach((h, i) => p[h] = (cells[i] || '').trim());
     return p;
-  }).filter(p => p.Name || p.Nombre || p.name || p.Jugador);
+  }).filter(p => p.Nombre || p.Name);
 }
 
 document.getElementById('fileInput').addEventListener('change', e => {
