@@ -206,8 +206,10 @@ function calculate() {
   const raw = document.getElementById('rawData').value.trim();
   if (!raw) return alert('Pega o sube datos');
 
-  const players = parse(raw);
-  if (players.length === 0) return alert('No se detectaron jugadores');
+  const players = allPlayers.filter(p => {
+  const pos = getPlayerPosition(p);
+  return matchesPosition(pos, role.positions);
+});
 
   const role = roleProfiles[document.getElementById('roleSelect').value];
   const scored = players.map(p => {
@@ -273,6 +275,12 @@ function parse(raw) {
     headers.forEach((h,i) => obj[h] = (cells[i]||'').trim());
     return obj;
   });
+}
+
+  function matchesPosition(playerPos, allowed) {
+  if (!playerPos) return false;
+  const pos = playerPos.toUpperCase();
+  return allowed.some(a => pos.includes(a.toUpperCase()));
 }
 
 document.getElementById('fileInput').addEventListener('change', e => {
