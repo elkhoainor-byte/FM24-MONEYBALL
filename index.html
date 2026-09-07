@@ -202,6 +202,23 @@ function getName(p) {
   return 'Desconocido';
 }
 
+function getPlayerPosition(p) {
+  // Prioridad a la columna exacta
+  if (p['Posición'] && p['Posición'].trim()) return p['Posición'].trim();
+  if (p['Posicion'] && p['Posicion'].trim()) return p['Posicion'].trim();
+  if (p['Position'] && p['Position'].trim()) return p['Position'].trim();
+  if (p['Pos'] && p['Pos'].trim()) return p['Pos'].trim();
+
+  // Búsqueda de emergencia por si el nombre de la columna es raro
+  for (const key of Object.keys(p)) {
+    const k = key.toLowerCase();
+    if (k.includes('posici') || k.includes('position') || k === 'pos') {
+      return (p[key] || '').trim();
+    }
+  }
+  return '';
+}
+  
 function calculate() {
   const raw = document.getElementById('rawData').value.trim();
   if (!raw) return alert('Pega o sube los datos');
