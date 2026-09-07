@@ -60,7 +60,7 @@
 const roleProfiles = {
   GK: {
     name: "Portero Cierre – Ataque",
-    description: "Solo porteros (POR) · xG evitados + distribución + seguridad",
+    description: "Solo porteros (POR)",
     positions: ["POR"],
     metrics: [
       {keys:["xg evitados","goles esperados evitados"], weight:2.2},
@@ -73,7 +73,7 @@ const roleProfiles = {
   },
   WB: {
     name: "Carrilero – Apoyo",
-    description: "Laterales / Carrileros (DF) · Presión + progresión + centros",
+    description: "Laterales / Carrileros (DF)",
     positions: ["DF"],
     metrics: [
       {keys:["presiones"], weight:2.0},
@@ -85,7 +85,7 @@ const roleProfiles = {
   },
   CB: {
     name: "Defensa con Toque – Defensa",
-    description: "Centrales (DF) · Salida limpia + recuperación + cero errores",
+    description: "Centrales (DF)",
     positions: ["DF"],
     metrics: [
       {keys:["pases progresivos"], weight:1.9},
@@ -98,7 +98,7 @@ const roleProfiles = {
   },
   DM: {
     name: "Pivote Organizador – Defensa",
-    description: "Pivotes / Mediocentros defensivos (ME)",
+    description: "Pivotes / Mediocentros (ME)",
     positions: ["ME"],
     metrics: [
       {keys:["pases progresivos"], weight:1.8},
