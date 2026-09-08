@@ -114,4 +114,242 @@ const roleProfiles = {
     metrics: [
       {keys:["pases progresivos"], weight:1.8},
       {keys:["% pase"], weight:1.5},
-      {keys:["
+      {keys:["rob/90","posesiones ganadas"], weight:1.7},
+      {keys:["presiones"], weight:1.4},
+      {keys:["pases clave"], weight:1.2}
+    ]
+  },
+  CM: {
+    name: "Centrocampista – Apoyo",
+    positions: ["ME"],
+    metrics: [
+      {keys:["presiones"], weight:2.0},
+      {keys:["pases progresivos"], weight:1.7},
+      {keys:["distancia cubierta"], weight:1.4},
+      {keys:["rob/90"], weight:1.3},
+      {keys:["pases clave"], weight:1.2}
+    ]
+  },
+  AP: {
+    name: "Organizador Adelantado – Ataque",
+    positions: ["ME"],
+    metrics: [
+      {keys:["pases clave"], weight:2.2},
+      {keys:["ocasiones claras"], weight:2.0},
+      {keys:["pases progresivos"], weight:1.6},
+      {keys:["xg","goles esperados"], weight:1.4}
+    ]
+  },
+  IF: {
+    name: "Delantero Interior – Apoyo",
+    positions: ["MP"],
+    metrics: [
+      {keys:["ocasiones claras"], weight:2.0},
+      {keys:["pases clave"], weight:1.8},
+      {keys:["xg"], weight:1.6},
+      {keys:["pases progresivos"], weight:1.4},
+      {keys:["presiones"], weight:1.3}
+    ]
+  },
+  F9: {
+    name: "Falso Nueve – Apoyo",
+    positions: ["DL"],
+    metrics: [
+      {keys:["ocasiones claras"], weight:2.3},
+      {keys:["pases clave"], weight:2.1},
+      {keys:["pases progresivos"], weight:1.6},
+      {keys:["xg","goles esperados"], weight:1.5},
+      {keys:["presiones"], weight:1.4}
+    ]
+  }
+};
+
+let squadPlayers = [];
+
+function normalize(s) {
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\/\%]/g,' ').replace(/\s+/g,' ').trim();
+}
+
+function findValue(p, keys) {
+  for (const k of keys) {
+    const nk = normalize(k);
+    for (const pk of Object.keys(p)) {
+      if (normalize(pk).includes(nk) || nk.includes(normalize(pk))) {
+        const val = parseFloat(String(p[pk]).replace(',','.').replace(/[^\d.-]/g,''));
+        if (!isNaN(val)) return {val, col: pk};
+      }
+    }
+  }
+  return {val:0, col:null};
+}
+
+function getName(p) {
+  if (p['Nombre'] && p['Nombre'].trim().length > 3) return p['Nombre'].trim();
+  for (const key of Object.keys(p)) {
+    const v = (p[key]||'').trim();
+    if (v.length > 6 && v.includes(' - ') && /[a-záéíóúñ]/i.test(v) && !v.includes('€') && !v.includes('%')) return v;
+  }
+  for (const key of Object.keys(p)) {
+    const v = (p[key]||'').trim();
+    if (v.length > 5 && /[a-záéíóúñ]{3,}/i.test(v) && !/^\d/.test(v) && !v.includes('€') && !v.includes('%')) return v;
+  }
+  return 'Desconocido';
+}
+
+function getPlayerPosition(p) {
+  if (p['Posición'] && p['Posición'].trim()) return p['Posición'].trim();
+  if (p['Posicion'] && p['Posicion'].trim()) return p['Posicion'].trim();
+  if (p['Position'] && p['Position'].trim()) return p['Position'].trim();
+  if (p['Pos'] && p['Pos'].trim()) return p['Pos'].trim();
+  for (const key of Object.keys(p)) {
+    const k = key.toLowerCase();
+    if (k.includes('posici') || k.includes('position') || k === 'pos') return (p[key]||'').trim();
+  }
+  return '';
+}
+
+function matchesPosition(playerPos, allowed) {
+  if (!playerPos) return false;
+  const pos = playerPos.toUpperCase();
+  return allowed.some(a => pos.includes(a.toUpperCase()));
+}
+
+function parse(raw) {
+  if (!raw) return [];
+  if (raw.includes('<table') || raw.includes('<tr')) {
+    const div = document.createElement('div');
+    div.innerHTML = raw;
+    const rows = [...div.querySelectorAll('tr')];
+    let header = rows.find(r => r.textContent.includes('Nombre') || r.textContent.includes('Name')) || rows[0];
+    const headers = [...header.querySelectorAll('th,td')].map(c => c.textContent.trim());
+    const start = rows.indexOf(header) + 1;
+    return rows.slice(start).map(row => {
+      const cells = [...row.querySelectorAll('td')];
+      const obj = {};
+      headers.forEach((h,i) => obj[h] = cells[i]?.textContent.trim() || '');
+      return obj;
+    }).filter(p => Object.values(p).some(v => v && v.length > 2));
+  }
+  const lines = raw.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const sep = lines[0].includes('\t') ? '\t' : lines[0].includes(';') ? ';' : ',';
+  const headers = lines[0].split(sep).map(h => h.trim());
+  return lines.slice(1).map(l => {
+    const cells = l.split(sep);
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = (cells[i]||'').trim());
+    return obj;
+  });
+}
+
+function calculate() {
+  const raw = document.getElementById('rawData').value.trim();
+  const allPlayers = parse(raw);
+  if (allPlayers.length === 0) return alert('No se detectaron jugadores en el mercado');
+
+  const roleKey = document.getElementById('roleSelect').value;
+  const role = roleProfiles[roleKey];
+  const useDiscard = document.getElementById('useDiscard').checked;
+
+  // Filtro posición
+  let players = allPlayers.filter(p => matchesPosition(getPlayerPosition(p), role.positions));
+
+  // Filtros de descarte
+  if (useDiscard && role.discard) {
+    players = players.filter(p => {
+      return role.discard.every(rule => {
+        const val = findValue(p, rule.keys).val;
+        if (rule.mustBe !== undefined) return val === rule.mustBe;
+        if (rule.mustBeGreaterThan !== undefined) return val > rule.mustBeGreaterThan;
+        return true;
+      });
+    });
+  }
+
+  if (players.length === 0) {
+    document.getElementById('results').innerHTML = `<p style="color:#f87171">No hay jugadores que cumplan los filtros.<br>Se analizaron ${allPlayers.length} jugadores.</p>`;
+    return;
+  }
+
+  const scored = players.map(p => {
+    let score = 0;
+    const details = [];
+    role.metrics.forEach(m => {
+      const r = findValue(p, m.keys);
+      score += r.val * m.weight;
+      if (r.val !== 0) details.push(`${r.col || m.keys[0]}: ${r.val.toFixed(2)} (×${m.weight})`);
+    });
+
+    // Comparación con plantilla
+    let comparison = '';
+    if (squadPlayers.length > 0) {
+      const currentScores = squadPlayers
+        .filter(s => matchesPosition(getPlayerPosition(s), role.positions))
+        .map(s => {
+          let sScore = 0;
+          role.metrics.forEach(m => sScore += findValue(s, m.keys).val * m.weight);
+          return sScore;
+        });
+      const bestCurrent = currentScores.length ? Math.max(...currentScores) : 0;
+      if (score > bestCurrent) {
+        comparison = `<div style="color:var(--good);font-size:12px;margin-top:4px">↑ Mejor que tu actual (${bestCurrent.toFixed(1)})</div>`;
+      } else {
+        comparison = `<div style="color:var(--bad);font-size:12px;margin-top:4px">↓ Peor o igual que tu actual (${bestCurrent.toFixed(1)})</div>`;
+      }
+    }
+
+    return {
+      name: getName(p),
+      age: p.Edad || p.Age || '',
+      club: p.Club || '',
+      pos: getPlayerPosition(p),
+      score: Math.round(score * 100) / 100,
+      details,
+      comparison
+    };
+  });
+
+  scored.sort((a,b) => b.score - a.score);
+  const top = scored.filter(p => p.name !== 'Desconocido').slice(0,3);
+
+  let html = `<p><strong>${role.name}</strong> · ${players.length} jugadores válidos (de ${allPlayers.length})
+    ${useDiscard ? ' · Filtros de descarte <strong>ACTIVADOS</strong>' : ' · Filtros desactivados'}</p>
+    <div class="top3">`;
+
+  top.forEach((p,i) => {
+    const cls = p.score >= 30 ? 'score-high' : p.score >= 20 ? 'score-mid' : 'score-low';
+    html += `<div class="player-card">
+      <div style="font-size:12px;opacity:.6">#${i+1}</div>
+      <h3>${p.name}</h3>
+      <div style="font-size:13px;opacity:.8">${p.age ? p.age+' años' : ''} ${p.pos ? '· '+p.pos : ''} ${p.club ? '· '+p.club : ''}</div>
+      <div class="score ${cls}">${p.score}</div>
+      ${p.comparison || ''}
+      <div class="stats-list">${p.details.map(d => `<div>${d}</div>`).join('')}</div>
+    </div>`;
+  });
+
+  document.getElementById('results').innerHTML = html + '</div>';
+}
+
+// Listeners
+document.getElementById('fileInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => document.getElementById('rawData').value = ev.target.result;
+  r.readAsText(f, 'UTF-8');
+});
+
+document.getElementById('squadInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    squadPlayers = parse(ev.target.result);
+    console.log('Plantilla cargada:', squadPlayers.length, 'jugadores');
+  };
+  r.readAsText(f, 'UTF-8');
+});
+</script>
+</body>
+</html>
