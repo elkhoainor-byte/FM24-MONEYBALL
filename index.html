@@ -41,19 +41,27 @@
   </div>
 
   <div class="card">
-    <h2>2. Datos</h2>
-    <p style="font-size:13px;opacity:.7;margin-bottom:8px">
-      Recomendado: Abre el .html en el navegador → selecciona toda la tabla → Copia → Pega aquí
-    </p>
-    <input type="file" id="fileInput" accept=".html,.htm,.csv,.txt">
-    <textarea id="rawData" rows="8" placeholder="Pega aquí la tabla..."></textarea>
-    <button onclick="calculate()">Calcular Top 3</button>
+  <h2>2. Datos</h2>
+  
+  <p style="font-size:13px;opacity:.7;margin-bottom:8px">
+    Archivo del <strong>mercado</strong> (jugadores a evaluar)
+  </p>
+  <input type="file" id="fileInput" accept=".html,.htm,.csv,.txt">
+  
+  <p style="font-size:13px;opacity:.7;margin:16px 0 8px">
+    Archivo de tu <strong>plantilla actual</strong> (opcional - para comparar)
+  </p>
+  <input type="file" id="squadInput" accept=".html,.htm,.csv,.txt">
+  
+  <div style="margin:16px 0; display:flex; align-items:center; gap:12px;">
+    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+      <input type="checkbox" id="useDiscard" checked style="width:18px; height:18px;">
+      <span>Aplicar filtros de descarte previo</span>
+    </label>
   </div>
 
-  <div class="card">
-    <h2>3. Resultados</h2>
-    <div id="results"></div>
-  </div>
+  <textarea id="rawData" rows="6" placeholder="O pega aquí la tabla del mercado..."></textarea>
+  <button onclick="calculate()">Calcular Top 3</button>
 </div>
 
 <script>
@@ -159,6 +167,8 @@ const roleProfiles = {
     ]
   }
 };
+
+  let squadPlayers = []; // Aquí guardaremos tu plantilla
   
 function matchesPosition(playerPos, allowed) {
   if (!playerPos) return false;
@@ -224,13 +234,16 @@ function getPlayerPosition(p) {
   
 function calculate() {
   const raw = document.getElementById('rawData').value.trim();
-  if (!raw) return alert('Pega o sube los datos');
+  if (!raw && !document.getElementById('fileInput').files.length) {
+    return alert('Sube o pega los datos del mercado');
+  }
 
-  const allPlayers = parse(raw);
-  if (allPlayers.length === 0) return alert('No se detectaron jugadores');
+  const allPlayers = parse(raw || document.getElementById('rawData').value);
+  if (allPlayers.length === 0) return alert('No se detectaron jugadores en el mercado');
 
   const roleKey = document.getElementById('roleSelect').value;
   const role = roleProfiles[roleKey];
+  const useDiscard = document.getElementById('useDiscard').checked;
 
   // 1. Filtro por posición
   let players = allPlayers.filter(p => {
@@ -238,19 +251,15 @@ function calculate() {
     return matchesPosition(pos, role.positions);
   });
 
-  // 2. Filtros de descarte (solo si el rol los tiene definidos)
-  if (role.discard) {
+  // 2. Filtros de descarte (solo si está activado el checkbox)
+  if (useDiscard && role.discard) {
     players = players.filter(p => {
       return role.discard.every(rule => {
         const result = findValue(p, rule.keys);
         const val = result.val;
 
-        if (rule.mustBe !== undefined) {
-          return val === rule.mustBe;
-        }
-        if (rule.mustBeGreaterThan !== undefined) {
-          return val > rule.mustBeGreaterThan;
-        }
+        if (rule.mustBe !== undefined) return val === rule.mustBe;
+        if (rule.mustBeGreaterThan !== undefined) return val > rule.mustBeGreaterThan;
         return true;
       });
     });
@@ -274,11 +283,75 @@ function calculate() {
       const r = findValue(p, m.keys);
       const contribution = r.val * m.weight;
       score += contribution;
-
       if (r.val !== 0) {
         details.push(`${r.col || m.keys[0]}: ${r.val.toFixed(2)} (×${m.weight})`);
       }
     });
+
+    // Comparar con la plantilla (si se ha subido)
+    let comparison = '';
+    if (squadPlayers.length > 0) {
+      const currentBest = squadPlayers
+        .filter(s => matchesPosition(getPlayerPosition(s), role.positions))
+        .map(s => {
+          let sScore = 0;
+          role.metrics.forEach(m => {
+            sScore += findValue(s, m.keys).val * m.weight;
+          });
+          return sScore;
+        })
+        .sort((a,b) => b - a)[0] || 0;
+
+      if (score > currentBest) {
+        comparison = `<div style="color:#4ade80; font-size:12px; margin-top:4px;">↑ Mejor que tu actual (${currentBest.toFixed(1)})</div>`;
+      } else {
+        comparison = `<div style="color:#f87171; font-size:12px; margin-top:4px;">↓ Peor que tu actual (${currentBest.toFixed(1)})</div>`;
+      }
+    }
+
+    return {
+      name: getName(p),
+      age: p.Edad || p.Age || '',
+      club: p.Club || '',
+      pos: getPlayerPosition(p),
+      score: Math.round(score * 100) / 100,
+      details,
+      comparison
+    };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  const top = scored.filter(p => p.name !== 'Desconocido').slice(0, 3);
+
+  let html = `<p>
+    <strong>${role.name}</strong> · 
+    ${players.length} jugadores cumplen los filtros 
+    (de ${allPlayers.length} totales)
+    ${useDiscard ? ' · Filtros de descarte <strong>ACTIVADOS</strong>' : ' · Filtros de descarte desactivados'}
+  </p>
+  <div class="top3">`;
+
+  top.forEach((p, i) => {
+    const cls = p.score >= 30 ? 'score-high' : p.score >= 20 ? 'score-mid' : 'score-low';
+    html += `
+      <div class="player-card">
+        <div style="font-size:12px;opacity:.6">#${i+1}</div>
+        <h3>${p.name}</h3>
+        <div style="font-size:13px;opacity:.8">
+          ${p.age ? p.age + ' años' : ''} 
+          ${p.pos ? '· ' + p.pos : ''} 
+          ${p.club ? '· ' + p.club : ''}
+        </div>
+        <div class="score ${cls}">${p.score}</div>
+        ${p.comparison || ''}
+        <div class="stats-list">
+          ${p.details.map(d => `<div>${d}</div>`).join('')}
+        </div>
+      </div>`;
+  });
+
+  document.getElementById('results').innerHTML = html + '</div>';
+}
 
     return {
       name: getName(p),
@@ -351,6 +424,17 @@ document.getElementById('fileInput').addEventListener('change', e => {
   const r = new FileReader();
   r.onload = ev => document.getElementById('rawData').value = ev.target.result;
   r.readAsText(f, 'UTF-8');
+
+  document.getElementById('squadInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    squadPlayers = parse(ev.target.result);
+    console.log(`Plantilla cargada: ${squadPlayers.length} jugadores`);
+  };
+  r.readAsText(f, 'UTF-8');
+});
 });
 </script>
 </body>
