@@ -39,7 +39,8 @@
       <option value="DM">Pivote Organizador – Defensa</option>
       <option value="CM">Centrocampista – Apoyo</option>
       <option value="AP">Organizador Adelantado – Ataque</option>
-      <option value="IF">Delantero Interior – Apoyo</option>
+      <option value="IFR">Delantero Interior Derecho – Apoyo</option>
+      <option value="IFL">Delantero Interior Izquierdo – Apoyo</option>
       <option value="F9">Falso Nueve – Apoyo</option>
     </select>
   </div>
@@ -233,17 +234,64 @@ WBL: {
     { keys: ["PRES C/90", "Presiones completadas/90", "PRES C", "Presiones completadas"], weight: 0.05 }
   ]
 },
-  IF: {
-    name: "Delantero Interior – Apoyo",
-    positions: ["MP"],
-    metrics: [
-      {keys:["ocasiones claras"], weight:2.0},
-      {keys:["pases clave"], weight:1.8},
-      {keys:["xg"], weight:1.6},
-      {keys:["pases progresivos"], weight:1.4},
-      {keys:["presiones"], weight:1.3}
-    ]
-  },
+  IFR: {
+  name: "Delantero Interior Derecho – Apoyo",
+  description: "Solo posiciones derechas · Regates/90 > 1.5 · Errores = 0",
+  positions: [
+    "MP (DC)",
+    "MP (DIC)",
+    "MP (DI)",
+    "MP (D)",
+    "ME/MP (DI)",
+    "ME/MP (D)",
+    "DF/MP (D)",
+    "DF/CR/ME/MP (D)"
+  ],
+  discard: [
+    { keys: ["GL ERR", "Errores que costaron goles", "errores que costaron goles"], mustBe: 0 },
+    { keys: ["REG/90", "Regates/90", "Regates realizados/90", "REG"], mustBeGreaterThan: 1.5 }
+  ],
+  metrics: [
+    { keys: ["XG-SP/90", "XG - SP/90", "Goles esperados sin penaltis/90", "XG-SP", "xG sin penaltis"], weight: 0.15 },
+    { keys: ["GOL/90", "Goles/90", "Goles"], weight: 0.10 },
+    { keys: ["% CONV", "Ratio de conversión", "% Conversión", "Conversión"], weight: 0.10 },
+    { keys: ["REG/90", "Regates/90", "Regates realizados/90", "REG"], weight: 0.15 },
+    { keys: ["P CLV-J AB/90", "Pases clave en juego abierto/90", "P CLV-J AB", "Pases clave"], weight: 0.15 },
+    { keys: ["PRES C/90", "Presiones completadas/90", "PRES C", "Presiones completadas"], weight: 0.12 },
+    { keys: ["POS GAN/90", "Posesiones ganadas/90", "POS GAN", "Posesiones ganadas"], weight: 0.08 },
+    { keys: ["ESPRINTS/90", "Esprints de alta intensidad/90", "Esprints", "ESPRINTS"], weight: 0.08 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], weight: 0.07 }
+  ]
+},
+IFL: {
+  name: "Delantero Interior Izquierdo – Apoyo",
+  description: "Solo posiciones izquierdas · Regates/90 > 1.5 · Errores = 0",
+  positions: [
+    "MP (IC)",
+    "MP (I)",
+    "MP (DIC)",
+    "MP (DI)",
+    "ME/MP (I)",
+    "ME/MP (DI)",
+    "DF/MP (I)",
+    "DF/ME/MP (I)"
+  ],
+  discard: [
+    { keys: ["GL ERR", "Errores que costaron goles", "errores que costaron goles"], mustBe: 0 },
+    { keys: ["REG/90", "Regates/90", "Regates realizados/90", "REG"], mustBeGreaterThan: 1.5 }
+  ],
+  metrics: [
+    { keys: ["XG-SP/90", "XG - SP/90", "Goles esperados sin penaltis/90", "XG-SP", "xG sin penaltis"], weight: 0.15 },
+    { keys: ["GOL/90", "Goles/90", "Goles"], weight: 0.10 },
+    { keys: ["% CONV", "Ratio de conversión", "% Conversión", "Conversión"], weight: 0.10 },
+    { keys: ["REG/90", "Regates/90", "Regates realizados/90", "REG"], weight: 0.15 },
+    { keys: ["P CLV-J AB/90", "Pases clave en juego abierto/90", "P CLV-J AB", "Pases clave"], weight: 0.15 },
+    { keys: ["PRES C/90", "Presiones completadas/90", "PRES C", "Presiones completadas"], weight: 0.12 },
+    { keys: ["POS GAN/90", "Posesiones ganadas/90", "POS GAN", "Posesiones ganadas"], weight: 0.08 },
+    { keys: ["ESPRINTS/90", "Esprints de alta intensidad/90", "Esprints", "ESPRINTS"], weight: 0.08 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], weight: 0.07 }
+  ]
+},
   F9: {
     name: "Falso Nueve – Apoyo",
     positions: ["DL"],
@@ -376,6 +424,21 @@ if (roleKey === "WBL") {
       pos.includes("DIC")
     );
 
+    // ========== DELANTERO INTERIOR DERECHO (IFR) ==========
+if (roleKey === "IFR") {
+  const allowedRight = [
+    "MP (DC)",
+    "MP (DIC)",
+    "MP (DI)",
+    "MP (D)",
+    "ME/MP (DI)",
+    "ME/MP (D)",
+    "DF/MP (D)",
+    "DF/CR/ME/MP (D)"
+  ];
+  return allowedRight.some(allowed => pos.includes(allowed.toUpperCase()));
+}
+
     // Excluir los que son solo de derecha
     const isPureRight = (
       (pos.includes("DF (D)") || pos.includes("DF (DC)")) &&
@@ -416,6 +479,21 @@ if (roleKey === "AP") {
     pos.includes("ME/MP (C)") ||
     pos.includes("ME / MP (C)")
   );
+}
+
+  // ========== DELANTERO INTERIOR IZQUIERDO (IFL) ==========
+if (roleKey === "IFL") {
+  const allowedLeft = [
+    "MP (IC)",
+    "MP (I)",
+    "MP (DIC)",
+    "MP (DI)",
+    "ME/MP (I)",
+    "ME/MP (DI)",
+    "DF/MP (I)",
+    "DF/ME/MP (I)"
+  ];
+  return allowedLeft.some(allowed => pos.includes(allowed.toUpperCase()));
 }
 
   // Resto de roles (método normal)
