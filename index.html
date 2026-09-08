@@ -305,29 +305,37 @@ function matchesPosition(playerPos, allowed, roleKey = null) {
   }
 
   // ========== CARRILERO DERECHO ==========
-  if (roleKey === "WBR") {
-    // Puede jugar por la derecha
-    const canPlayRight = (
-      pos.includes("DF (D)") ||
-      pos.includes("DF (DC)") ||
-      pos.includes("DF (DI)") ||
-      pos.includes("DF (DIC)") ||
-      pos.includes("(D)") ||
-      pos.includes("DI") ||
-      pos.includes("DIC")
-    );
+if (roleKey === "WBR") {
+  // Puede jugar por la derecha
+  const canPlayRight = (
+    pos.includes("DF (D)") ||
+    pos.includes("DF (DC)") ||
+    pos.includes("DF (DI)") ||
+    pos.includes("DF (DIC)") ||
+    pos.includes("DF/CR (D)") ||
+    pos.includes("DF/ME (D)") ||
+    pos.includes("DF/MP (D)") ||
+    pos.includes("DF/CR/ME (D)") ||
+    pos.includes("DF/CR/MP (D)") ||
+    pos.includes("DF/ME/MP (D)") ||
+    pos.includes("DF/CR/ME/MP (D)") ||
+    pos.includes("DF//ME/MP (D)") ||        // por si viene con doble barra
+    pos.includes("(D)") ||
+    pos.includes("DI") ||
+    pos.includes("DIC")
+  );
 
-    // Excluir los que son solo de izquierda
-    const isPureLeft = (
-      (pos.includes("DF (I)") || pos.includes("DF (IC)")) &&
-      !pos.includes("DF (D)") &&
-      !pos.includes("DF (DC)") &&
-      !pos.includes("DI") &&
-      !pos.includes("DIC")
-    );
+  // Excluir los que son solo de izquierda
+  const isPureLeft = (
+    (pos.includes("DF (I)") || pos.includes("DF (IC)")) &&
+    !pos.includes("DF (D)") &&
+    !pos.includes("DF (DC)") &&
+    !pos.includes("DI") &&
+    !pos.includes("DIC")
+  );
 
-    return canPlayRight && !isPureLeft;
-  }
+  return canPlayRight && !isPureLeft;
+}
 
   // ========== CARRILERO IZQUIERDO ==========
   if (roleKey === "WBL") {
