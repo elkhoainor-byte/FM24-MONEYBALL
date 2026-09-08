@@ -210,15 +210,29 @@ WBL: {
   ]
 },
   AP: {
-    name: "Organizador Adelantado – Ataque",
-    positions: ["ME"],
-    metrics: [
-      {keys:["pases clave"], weight:2.2},
-      {keys:["ocasiones claras"], weight:2.0},
-      {keys:["pases progresivos"], weight:1.6},
-      {keys:["xg","goles esperados"], weight:1.4}
-    ]
-  },
+  name: "Organizador Adelantado – Ataque",
+  description: "Solo ME (C) · MC, ME (C) · ME/MP (C) · Regates/90 entre 1.2-1.5 · Errores = 0",
+  positions: [
+    "ME (C)",
+    "MC, ME (C)",
+    "ME/MP (C)"
+  ],
+  discard: [
+    { keys: ["GL ERR", "Errores que costaron goles", "errores que costaron goles"], mustBe: 0 },
+    { keys: ["REG/90", "Regates/90", "Regates realizados/90", "REG"], mustBeBetween: [1.2, 1.5] }
+  ],
+  metrics: [
+    { keys: ["P CLV-J AB/90", "Pases clave en juego abierto/90", "P CLV-J AB", "Pases clave"], weight: 0.15 },
+    { keys: ["ASIE/90", "Asistencias esperadas/90", "ASIE", "xA"], weight: 0.15 },
+    { keys: ["OC C/90", "Ocasiones creadas/90", "OC C", "Ocasiones creadas"], weight: 0.10 },
+    { keys: ["REG/90", "Regates/90", "Regates realizados/90", "REG"], weight: 0.15 },
+    { keys: ["PASES PROG/90", "Pases progresivos/90", "PASES PROG", "Pases progresivos"], weight: 0.10 },
+    { keys: ["PS C/90", "Pases completados/90", "PS C", "Pases completados"], weight: 0.10 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], weight: 0.10 },
+    { keys: ["DIST/90", "Distancia cubierta/90", "Distancia", "DIST"], weight: 0.10 },
+    { keys: ["PRES C/90", "Presiones completadas/90", "PRES C", "Presiones completadas"], weight: 0.05 }
+  ]
+},
   IF: {
     name: "Delantero Interior – Apoyo",
     positions: ["MP"],
@@ -393,6 +407,17 @@ if (roleKey === "DM") {
   );
 }
 
+  // ========== ORGANIZADOR ADELANTADO (AP) ==========
+if (roleKey === "AP") {
+  return (
+    pos.includes("ME (C)") ||
+    pos.includes("MC, ME (C)") ||
+    pos.includes("MC,ME (C)") ||
+    pos.includes("ME/MP (C)") ||
+    pos.includes("ME / MP (C)")
+  );
+}
+
   // Resto de roles (método normal)
   return allowed.some(a => pos.includes(a.toUpperCase()));
 }
@@ -439,15 +464,18 @@ function calculate() {
 
   // 2. Filtros de descarte (si están activados)
   if (useDiscard && role.discard) {
-    players = players.filter(p => {
-      return role.discard.every(rule => {
-        const val = findValue(p, rule.keys).val;
-        if (rule.mustBe !== undefined) return val === rule.mustBe;
-        if (rule.mustBeGreaterThan !== undefined) return val > rule.mustBeGreaterThan;
-        return true;
-      });
+  players = players.filter(p => {
+    return role.discard.every(rule => {
+      const val = findValue(p, rule.keys).val;
+      if (rule.mustBe !== undefined) return val === rule.mustBe;
+      if (rule.mustBeGreaterThan !== undefined) return val > rule.mustBeGreaterThan;
+      if (rule.mustBeBetween !== undefined) {
+        return val >= rule.mustBeBetween[0] && val <= rule.mustBeBetween[1];
+      }
+      return true;
     });
-  }
+  });
+}
 
   if (players.length === 0) {
     document.getElementById('results').innerHTML = `
