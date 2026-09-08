@@ -293,16 +293,28 @@ IFL: {
   ]
 },
   F9: {
-    name: "Falso Nueve – Apoyo",
-    positions: ["DL"],
-    metrics: [
-      {keys:["ocasiones claras"], weight:2.3},
-      {keys:["pases clave"], weight:2.1},
-      {keys:["pases progresivos"], weight:1.6},
-      {keys:["xg","goles esperados"], weight:1.5},
-      {keys:["presiones"], weight:1.4}
-    ]
-  }
+  name: "Falso Nueve – Apoyo",
+  description: "Solo DL (C) · % Pase > 80% · Errores = 0",
+  positions: [
+    "DL (C)"
+  ],
+  discard: [
+    { keys: ["GL ERR", "Errores que costaron goles", "errores que costaron goles"], mustBe: 0 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 80 }
+  ],
+  metrics: [
+    { keys: ["OC C/90", "Ocasiones creadas/90", "OC C", "Ocasiones creadas"], weight: 0.15 },
+    { keys: ["GOL/90", "Goles/90", "Goles"], weight: 0.10 },
+    { keys: ["P CLV-J AB/90", "Pases clave en juego abierto/90", "P CLV-J AB", "Pases clave"], weight: 0.15 },
+    { keys: ["ASIE/90", "Asistencias esperadas/90", "ASIE", "xA"], weight: 0.10 },
+    { keys: ["REG/90", "Regates/90", "Regates realizados/90", "REG"], weight: 0.15 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], weight: 0.10 },
+    { keys: ["% CONV", "Ratio de conversión", "% Conversión", "Conversión"], weight: 0.10 },
+    { keys: ["XG-SP/90", "XG - SP/90", "Goles esperados sin penaltis/90", "XG-SP", "xG sin penaltis"], weight: 0.10 },
+    { keys: ["DIST/90", "Distancia cubierta/90", "Distancia", "DIST"], weight: 0.08 },
+    { keys: ["PRES C/90", "Presiones completadas/90", "PRES C", "Presiones completadas"], weight: 0.07 }
+  ]
+}
 };
 
 let squadPlayers = [];
@@ -494,6 +506,15 @@ if (roleKey === "IFL") {
     "DF/ME/MP (I)"
   ];
   return allowedLeft.some(allowed => pos.includes(allowed.toUpperCase()));
+}
+
+  // ========== FALSO NUEVE (F9) ==========
+if (roleKey === "F9") {
+  return (
+    pos.includes("DL (C)") ||
+    pos === "DL C" ||
+    pos === "DLC"
+  );
 }
 
   // Resto de roles (método normal)
