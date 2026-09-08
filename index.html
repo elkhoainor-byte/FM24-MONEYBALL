@@ -305,10 +305,10 @@ function calculate() {
   const role = roleProfiles[roleKey];
   const useDiscard = document.getElementById('useDiscard').checked;
 
-  // Filtro posición
+  // 1. Filtro por posición
   let players = allPlayers.filter(p => matchesPosition(getPlayerPosition(p), role.positions));
 
-  // Filtros de descarte
+  // 2. Filtros de descarte (si están activados)
   if (useDiscard && role.discard) {
     players = players.filter(p => {
       return role.discard.every(rule => {
@@ -321,36 +321,27 @@ function calculate() {
   }
 
   if (players.length === 0) {
-    document.getElementById('results').innerHTML = `<p style="color:#f87171">No hay jugadores que cumplan los filtros.<br>Se analizaron ${allPlayers.length} jugadores.</p>`;
+    document.getElementById('results').innerHTML = `
+      <p style="color:#f87171">
+        No hay jugadores que cumplan los filtros de este rol.<br>
+        Se analizaron ${allPlayers.length} jugadores en total.
+      </p>`;
+    document.getElementById('squadList').innerHTML = `<p style="opacity:.6;font-size:13px;">No hay datos</p>`;
     return;
   }
 
+  // 3. Calcular puntuación de los jugadores del mercado
   const scored = players.map(p => {
     let score = 0;
     const details = [];
+
     role.metrics.forEach(m => {
       const r = findValue(p, m.keys);
       score += r.val * m.weight;
-      if (r.val !== 0) details.push(`${r.col || m.keys[0]}: ${r.val.toFixed(2)} (×${m.weight})`);
-    });
-
-    // Comparación con plantilla
-    let comparison = '';
-    if (squadPlayers.length > 0) {
-      const currentScores = squadPlayers
-        .filter(s => matchesPosition(getPlayerPosition(s), role.positions))
-        .map(s => {
-          let sScore = 0;
-          role.metrics.forEach(m => sScore += findValue(s, m.keys).val * m.weight);
-          return sScore;
-        });
-      const bestCurrent = currentScores.length ? Math.max(...currentScores) : 0;
-      if (score > bestCurrent) {
-        comparison = `<div style="color:var(--good);font-size:12px;margin-top:4px">↑ Mejor que tu actual (${bestCurrent.toFixed(1)})</div>`;
-      } else {
-        comparison = `<div style="color:var(--bad);font-size:12px;margin-top:4px">↓ Peor o igual que tu actual (${bestCurrent.toFixed(1)})</div>`;
+      if (r.val !== 0) {
+        details.push(`${r.col || m.keys[0]}: ${r.val.toFixed(2)} (×${m.weight})`);
       }
-    }
+    });
 
     return {
       name: getName(p),
@@ -358,17 +349,14 @@ function calculate() {
       club: p.Club || '',
       pos: getPlayerPosition(p),
       score: Math.round(score * 100) / 100,
-      details,
-      comparison
+      details
     };
   });
-
-    // ... (todo el código anterior de calculate se mantiene igual hasta el sort)
 
   scored.sort((a, b) => b.score - a.score);
   const top = scored.filter(p => p.name !== 'Desconocido').slice(0, 3);
 
-  // Jugadores de tu plantilla en esta posición
+  // 4. Jugadores de TU plantilla en esta posición
   const myPlayersInPos = squadPlayers
     .filter(s => matchesPosition(getPlayerPosition(s), role.positions))
     .map(s => {
@@ -384,7 +372,7 @@ function calculate() {
     })
     .sort((a, b) => b.score - a.score);
 
-  // Panel lateral de tu plantilla
+  // 5. Panel lateral de tu plantilla
   let squadHtml = '';
   if (myPlayersInPos.length === 0) {
     squadHtml = `<p style="opacity:.6;font-size:13px;">No tienes jugadores en esta posición<br>o no has subido la plantilla</p>`;
@@ -399,7 +387,7 @@ function calculate() {
   }
   document.getElementById('squadList').innerHTML = squadHtml;
 
-  // Resultados del mercado con comparaciones individuales
+  // 6. Resultados del mercado + comparaciones individuales
   let html = `<p>
     <strong>${role.name}</strong> · 
     ${players.length} jugadores válidos (de ${allPlayers.length})
@@ -415,11 +403,11 @@ function calculate() {
     if (myPlayersInPos.length > 0) {
       comparisons = myPlayersInPos.map(myP => {
         if (p.score > myP.score) {
-          return `<div style="color:var(--good); font-size:12px;">↑ Mejor que ${myP.name} (${myP.score})</div>`;
+          return `<div style="color:var(--good); font-size:12px; margin-top:2px;">↑ Mejor que ${myP.name} (${myP.score})</div>`;
         } else if (p.score < myP.score) {
-          return `<div style="color:var(--bad); font-size:12px;">↓ Peor que ${myP.name} (${myP.score})</div>`;
+          return `<div style="color:var(--bad); font-size:12px; margin-top:2px;">↓ Peor que ${myP.name} (${myP.score})</div>`;
         } else {
-          return `<div style="color:var(--mid); font-size:12px;">= Igual que ${myP.name} (${myP.score})</div>`;
+          return `<div style="color:var(--mid); font-size:12px; margin-top:2px;">= Igual que ${myP.name} (${myP.score})</div>`;
         }
       }).join('');
     }
@@ -442,9 +430,6 @@ function calculate() {
         </div>
       </div>`;
   });
-
-  document.getElementById('results').innerHTML = html + '</div>';
-}
 
   document.getElementById('results').innerHTML = html + '</div>';
 }
