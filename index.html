@@ -151,17 +151,30 @@ WBL: {
   ]
 },
   CB: {
-    name: "Defensa con Toque – Defensa",
-    positions: ["DF"],
-    metrics: [
-      {keys:["pases progresivos"], weight:1.9},
-      {keys:["% pase","ratio de pases"], weight:1.3},
-      {keys:["rob/90","posesiones ganadas"], weight:1.6},
-      {keys:["ent p","entradas clave"], weight:1.3},
-      {keys:["presiones"], weight:1.2},
-      {keys:["errores que costaron goles"], weight:-2.8}
-    ]
-  },
+  name: "Defensa con Toque – Defensa",
+  description: "Centrales · Errores = 0 · % Pase > 86% · Cabezazos > 65%",
+  positions: [
+    "DF (C)",
+    "DF (DC)",
+    "DF (IC)",
+    "DF (DIC)",
+    "DF/ME (C)"
+  ],
+  discard: [
+    { keys: ["GL ERR", "Errores que costaron goles", "errores que costaron goles"], mustBe: 0 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 86 },
+    { keys: ["RC G %", "Ratio de cabezazos ganados", "Cabezazos ganados %", "RC G"], mustBeGreaterThan: 65 }
+  ],
+  metrics: [
+    { keys: ["PASES PROG/90", "Pases progresivos/90", "Pases progresivos", "PASES PROG"], weight: 0.20 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], weight: 0.15 },
+    { keys: ["ENT P", "Ent P", "Ratio de entradas completadas", "Ratio entradas"], weight: 0.15 },
+    { keys: ["RC G %", "Ratio de cabezazos ganados", "Cabezazos ganados %", "RC G"], weight: 0.15 },
+    { keys: ["POS GAN/90", "Posesiones ganadas/90", "POS GAN", "Posesiones ganadas"], weight: 0.15 },
+    { keys: ["ENT CLV/90", "Entradas clave/90", "ENT CLV", "Entradas clave"], weight: 0.10 },
+    { keys: ["DESP/90", "Despejes/90", "DESP", "Despejes"], weight: 0.10 }
+  ]
+},
   DM: {
     name: "Pivote Organizador – Defensa",
     positions: ["MC"],
