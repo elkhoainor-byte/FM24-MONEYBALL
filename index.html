@@ -238,18 +238,45 @@ function findValue(p, keys) {
 }
 
 function getName(p) {
-  if (p['Nombre'] && p['Nombre'].trim().length > 3) return p['Nombre'].trim();
-  for (const key of Object.keys(p)) {
-    const v = (p[key]||'').trim();
-    if (v.length > 6 && v.includes(' - ') && /[a-záéíóúñ]/i.test(v) && !v.includes('€') && !v.includes('%')) return v;
+  // 1. Prioridad máxima a la columna "Nombre"
+  if (p['Nombre'] && p['Nombre'].trim().length > 2) {
+    return p['Nombre'].trim();
   }
-  for (const key of Object.keys(p)) {
-    const v = (p[key]||'').trim();
-    if (v.length > 5 && /[a-záéíóúñ]{3,}/i.test(v) && !/^\d/.test(v) && !v.includes('€') && !v.includes('%')) return v;
+
+  // 2. Otras columnas comunes
+  const possibleNameKeys = ['Name', 'Player', 'Jugador', 'Inf', 'nombre', 'NAME'];
+  for (const key of possibleNameKeys) {
+    if (p[key] && p[key].trim().length > 2 && p[key] !== '-' && p[key] !== '--') {
+      return p[key].trim();
+    }
   }
+
+  // 3. Buscar cualquier valor que parezca un nombre completo (contiene letras + posiblemente " - ")
+  for (const key of Object.keys(p)) {
+    const val = (p[key] || '').trim();
+    if (
+      val.length > 5 &&
+      /[a-záéíóúñA-ZÁÉÍÓÚÑ]/.test(val) &&          // tiene letras
+      !/^\d+([.,]\d+)?%?$/.test(val) &&             // no es solo un número
+      !val.includes('€') &&
+      !val.includes('/90') &&
+      !val.toLowerCase().includes('pase') &&
+      !val.toLowerCase().includes('dist')
+    ) {
+      return val;
+    }
+  }
+
+  // 4. Último recurso: la primera columna que tenga texto decente
+  for (const key of Object.keys(p)) {
+    const val = (p[key] || '').trim();
+    if (val.length > 3 && /[a-zA-Záéíóúñ]/.test(val)) {
+      return val;
+    }
+  }
+
   return 'Desconocido';
 }
-
 function getPlayerPosition(p) {
   if (p['Posición'] && p['Posición'].trim()) return p['Posición'].trim();
   if (p['Posicion'] && p['Posicion'].trim()) return p['Posicion'].trim();
