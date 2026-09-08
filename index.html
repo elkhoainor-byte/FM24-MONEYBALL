@@ -280,13 +280,18 @@ function getName(p) {
   return '';
 }
 
-function matchesPosition(playerPos, allowed) {
+function matchesPosition(playerPos, allowed, roleKey = null) {
   if (!playerPos) return false;
 
   const pos = playerPos.toUpperCase().replace(/\s+/g, ' ').trim();
 
-  // ===================== CENTRALES (CB) =====================
-  if (allowed.some(a => a.includes("DF (C)") || a.includes("DC") || a.includes("CENTRAL"))) {
+  // ========== PORTEROS ==========
+  if (roleKey === "GK") {
+    return pos.includes("POR") || pos.includes("GK") || pos.includes("PORTERO");
+  }
+
+  // ========== CENTRALES ==========
+  if (roleKey === "CB") {
     return (
       pos.includes("DF (C)") ||
       pos.includes("DF (DC)") ||
@@ -299,43 +304,61 @@ function matchesPosition(playerPos, allowed) {
     );
   }
 
-  // ===================== PORTEROS =====================
-  if (allowed.includes("POR") || allowed.some(a => a === "GK")) {
-    return pos.includes("POR") || pos.includes("GK") || pos.includes("PORTERO");
-  }
-
-  // ===================== CARRILERO DERECHO (WBR) =====================
-  if (allowed.some(a => a.includes("(D)") && !a.includes("(I)"))) {
-    // Acepta todo lo que pueda jugar por la derecha
-    return (
+  // ========== CARRILERO DERECHO ==========
+  if (roleKey === "WBR") {
+    // Puede jugar por la derecha
+    const canPlayRight = (
       pos.includes("DF (D)") ||
-      pos.includes("DF (DC)") ||          // polivalente central + derecho
+      pos.includes("DF (DC)") ||
       pos.includes("DF (DI)") ||
       pos.includes("DF (DIC)") ||
       pos.includes("(D)") ||
       pos.includes("DI") ||
       pos.includes("DIC")
-    ) && !pos.includes("DF (I)") && !pos.includes("DF (IC)"); // evita puros izquierdos
+    );
+
+    // Excluir los que son solo de izquierda
+    const isPureLeft = (
+      (pos.includes("DF (I)") || pos.includes("DF (IC)")) &&
+      !pos.includes("DF (D)") &&
+      !pos.includes("DF (DC)") &&
+      !pos.includes("DI") &&
+      !pos.includes("DIC")
+    );
+
+    return canPlayRight && !isPureLeft;
   }
 
-  // ===================== CARRILERO IZQUIERDO (WBL) =====================
-  if (allowed.some(a => a.includes("(I)") && !a.includes("(D)"))) {
-    // Acepta todo lo que pueda jugar por la izquierda
-    return (
+  // ========== CARRILERO IZQUIERDO ==========
+  if (roleKey === "WBL") {
+    // Puede jugar por la izquierda
+    const canPlayLeft = (
       pos.includes("DF (I)") ||
-      pos.includes("DF (IC)") ||          // polivalente central + izquierdo
+      pos.includes("DF (IC)") ||
       pos.includes("DF (DI)") ||
       pos.includes("DF (DIC)") ||
       pos.includes("(I)") ||
       pos.includes("DI") ||
       pos.includes("DIC")
-    ) && !pos.includes("DF (D)") && !pos.includes("DF (DC)"); // evita puros derechos
+    );
+
+    // Excluir los que son solo de derecha
+    const isPureRight = (
+      (pos.includes("DF (D)") || pos.includes("DF (DC)")) &&
+      !pos.includes("DF (I)") &&
+      !pos.includes("DF (IC)") &&
+      !pos.includes("DI") &&
+      !pos.includes("DIC")
+    );
+
+    return canPlayLeft && !isPureRight;
   }
 
-  // Resto de roles
+  // Resto de roles (método normal)
   return allowed.some(a => pos.includes(a.toUpperCase()));
 }
-function parse(raw) {
+
+  function parse(raw) {
   if (!raw) return [];
   if (raw.includes('<table') || raw.includes('<tr')) {
     const div = document.createElement('div');
@@ -373,7 +396,7 @@ function calculate() {
   const useDiscard = document.getElementById('useDiscard').checked;
 
   // 1. Filtro por posición
-  let players = allPlayers.filter(p => matchesPosition(getPlayerPosition(p), role.positions));
+  let players = allPlayers.filter(p => matchesPosition(getPlayerPosition(p), role.positions, roleKey));
 
   // 2. Filtros de descarte (si están activados)
   if (useDiscard && role.discard) {
@@ -425,7 +448,7 @@ function calculate() {
 
   // 4. Jugadores de TU plantilla en esta posición
   const myPlayersInPos = squadPlayers
-    .filter(s => matchesPosition(getPlayerPosition(s), role.positions))
+    .filter(s => matchesPosition(getPlayerPosition(s), role.positions, roleKey))
     .map(s => {
       let sScore = 0;
       role.metrics.forEach(m => {
