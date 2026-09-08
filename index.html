@@ -63,8 +63,19 @@
   </div>
 
   <div class="card">
-    <h2>3. Resultados</h2>
-    <div id="results"><p style="opacity:.6">Aquí aparecerán los resultados</p></div>
+  <h2>3. Resultados</h2>
+  <div style="display: grid; grid-template-columns: 1fr 320px; gap: 20px;">
+    <div id="results">
+      <p style="opacity:.6">Aquí aparecerán los resultados del mercado</p>
+    </div>
+    
+    <!-- Panel de tu plantilla -->
+    <div id="squadPanel" style="background:#0f172a; border-radius:12px; padding:16px; border:1px solid #334155;">
+      <h3 style="margin-bottom:12px; font-size:1.1rem;">Tu plantilla (posición actual)</h3>
+      <div id="squadList">
+        <p style="opacity:.6; font-size:13px;">Sube tu plantilla para ver la comparación</p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -352,24 +363,88 @@ function calculate() {
     };
   });
 
-  scored.sort((a,b) => b.score - a.score);
-  const top = scored.filter(p => p.name !== 'Desconocido').slice(0,3);
+    // ... (todo el código anterior de calculate se mantiene igual hasta el sort)
 
-  let html = `<p><strong>${role.name}</strong> · ${players.length} jugadores válidos (de ${allPlayers.length})
-    ${useDiscard ? ' · Filtros de descarte <strong>ACTIVADOS</strong>' : ' · Filtros desactivados'}</p>
-    <div class="top3">`;
+  scored.sort((a, b) => b.score - a.score);
+  const top = scored.filter(p => p.name !== 'Desconocido').slice(0, 3);
 
-  top.forEach((p,i) => {
+  // Jugadores de tu plantilla en esta posición
+  const myPlayersInPos = squadPlayers
+    .filter(s => matchesPosition(getPlayerPosition(s), role.positions))
+    .map(s => {
+      let sScore = 0;
+      role.metrics.forEach(m => {
+        sScore += findValue(s, m.keys).val * m.weight;
+      });
+      return {
+        name: getName(s),
+        score: Math.round(sScore * 100) / 100,
+        pos: getPlayerPosition(s)
+      };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  // Panel lateral de tu plantilla
+  let squadHtml = '';
+  if (myPlayersInPos.length === 0) {
+    squadHtml = `<p style="opacity:.6;font-size:13px;">No tienes jugadores en esta posición<br>o no has subido la plantilla</p>`;
+  } else {
+    squadHtml = myPlayersInPos.map(p => `
+      <div style="background:#1e293b; padding:10px; border-radius:8px; margin-bottom:8px;">
+        <div style="font-weight:600;">${p.name}</div>
+        <div style="font-size:13px; opacity:.8;">${p.pos}</div>
+        <div style="font-size:1.2rem; font-weight:700; color:var(--accent); margin-top:4px;">${p.score}</div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('squadList').innerHTML = squadHtml;
+
+  // Resultados del mercado con comparaciones individuales
+  let html = `<p>
+    <strong>${role.name}</strong> · 
+    ${players.length} jugadores válidos (de ${allPlayers.length})
+    ${useDiscard ? ' · Filtros de descarte <strong>ACTIVADOS</strong>' : ' · Filtros desactivados'}
+  </p>
+  <div class="top3">`;
+
+  top.forEach((p, i) => {
     const cls = p.score >= 30 ? 'score-high' : p.score >= 20 ? 'score-mid' : 'score-low';
-    html += `<div class="player-card">
-      <div style="font-size:12px;opacity:.6">#${i+1}</div>
-      <h3>${p.name}</h3>
-      <div style="font-size:13px;opacity:.8">${p.age ? p.age+' años' : ''} ${p.pos ? '· '+p.pos : ''} ${p.club ? '· '+p.club : ''}</div>
-      <div class="score ${cls}">${p.score}</div>
-      ${p.comparison || ''}
-      <div class="stats-list">${p.details.map(d => `<div>${d}</div>`).join('')}</div>
-    </div>`;
+
+    // Comparaciones individuales contra cada jugador de tu plantilla
+    let comparisons = '';
+    if (myPlayersInPos.length > 0) {
+      comparisons = myPlayersInPos.map(myP => {
+        if (p.score > myP.score) {
+          return `<div style="color:var(--good); font-size:12px;">↑ Mejor que ${myP.name} (${myP.score})</div>`;
+        } else if (p.score < myP.score) {
+          return `<div style="color:var(--bad); font-size:12px;">↓ Peor que ${myP.name} (${myP.score})</div>`;
+        } else {
+          return `<div style="color:var(--mid); font-size:12px;">= Igual que ${myP.name} (${myP.score})</div>`;
+        }
+      }).join('');
+    }
+
+    html += `
+      <div class="player-card">
+        <div style="font-size:12px;opacity:.6">#${i+1}</div>
+        <h3>${p.name}</h3>
+        <div style="font-size:13px;opacity:.8">
+          ${p.age ? p.age + ' años' : ''} 
+          ${p.pos ? '· ' + p.pos : ''} 
+          ${p.club ? '· ' + p.club : ''}
+        </div>
+        <div class="score ${cls}">${p.score}</div>
+        <div style="margin-top:6px;">
+          ${comparisons}
+        </div>
+        <div class="stats-list">
+          ${p.details.map(d => `<div>${d}</div>`).join('')}
+        </div>
+      </div>`;
   });
+
+  document.getElementById('results').innerHTML = html + '</div>';
+}
 
   document.getElementById('results').innerHTML = html + '</div>';
 }
