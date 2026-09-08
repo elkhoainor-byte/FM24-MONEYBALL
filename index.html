@@ -153,23 +153,17 @@ WBL: {
   CB: {
   name: "Defensa con Toque – Defensa",
   description: "Centrales · Errores = 0 · % Pase > 86% · Cabezazos > 65%",
-  positions: [
-    "DF (C)",
-    "DF (DC)",
-    "DF (IC)",
-    "DF (DIC)",
-    "DF/ME (C)"
-  ],
+  positions: ["DF (C)", "DC", "CENTRAL"],   // ya no hace falta poner todas
   discard: [
     { keys: ["GL ERR", "Errores que costaron goles", "errores que costaron goles"], mustBe: 0 },
     { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 86 },
-    { keys: ["RC G %", "Ratio de cabezazos ganados", "Cabezazos ganados %", "RC G"], mustBeGreaterThan: 65 }
+    { keys: ["RC G %", "Ratio de cabezazos ganados", "Cabezazos ganados %", "RC G", "% Cabezazos"], mustBeGreaterThan: 65 }
   ],
   metrics: [
     { keys: ["PASES PROG/90", "Pases progresivos/90", "Pases progresivos", "PASES PROG"], weight: 0.20 },
     { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], weight: 0.15 },
-    { keys: ["ENT P", "Ent P", "Ratio de entradas completadas", "Ratio entradas"], weight: 0.15 },
-    { keys: ["RC G %", "Ratio de cabezazos ganados", "Cabezazos ganados %", "RC G"], weight: 0.15 },
+    { keys: ["ENT P", "Ent P", "Ratio de entradas completadas", "Ratio entradas", "% Entradas"], weight: 0.15 },
+    { keys: ["RC G %", "Ratio de cabezazos ganados", "Cabezazos ganados %", "RC G", "% Cabezazos"], weight: 0.15 },
     { keys: ["POS GAN/90", "Posesiones ganadas/90", "POS GAN", "Posesiones ganadas"], weight: 0.15 },
     { keys: ["ENT CLV/90", "Entradas clave/90", "ENT CLV", "Entradas clave"], weight: 0.10 },
     { keys: ["DESP/90", "Despejes/90", "DESP", "Despejes"], weight: 0.10 }
@@ -294,8 +288,44 @@ function getName(p) {
 
 function matchesPosition(playerPos, allowed) {
   if (!playerPos) return false;
-  const pos = playerPos.toUpperCase();
-  return allowed.some(a => pos.includes(a.toUpperCase()));
+  
+  // Normalizamos la posición del jugador
+  let pos = playerPos.toUpperCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // === CASO ESPECIAL: CENTRALES (CB) ===
+  if (allowed.some(a => a.includes("DF (C)") || a.includes("DC") || a === "CENTRAL")) {
+    // Cualquier cosa que contenga estas palabras se considera central
+    const isCentral = 
+      pos.includes("DF C") || 
+      pos.includes("DF DC") || 
+      pos.includes("DF IC") || 
+      pos.includes("DF DIC") ||
+      pos.includes("DF ME C") ||
+      pos.includes("DC") ||
+      pos.includes("CENTRAL") ||
+      pos === "C" ||
+      pos.startsWith("DF C") ||
+      (pos.includes("DF") && pos.includes("C") && !pos.includes("D ") && !pos.includes("I ")); // evita laterales
+
+    if (isCentral) return true;
+  }
+
+  // === CASO ESPECIAL: PORTEROS (GK) ===
+  if (allowed.includes("POR") || allowed.includes("GK")) {
+    if (pos.includes("POR") || pos.includes("GK") || pos.includes("PORTERO") || pos === "G") {
+      return true;
+    }
+  }
+
+  // === Resto de roles (lógica normal) ===
+  return allowed.some(a => {
+    const cleanAllowed = a.toUpperCase().replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
+    return pos.includes(cleanAllowed) || cleanAllowed.includes(pos);
+  });
 }
 
 function parse(raw) {
