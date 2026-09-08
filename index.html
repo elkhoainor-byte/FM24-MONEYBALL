@@ -238,46 +238,36 @@ function findValue(p, keys) {
 }
 
 function getName(p) {
-  // 1. Prioridad máxima a la columna "Nombre"
-  if (p['Nombre'] && p['Nombre'].trim().length > 2) {
-    return p['Nombre'].trim();
-  }
+  // 1. Buscar la columna Nombre (con o sin tilde)
+  let rawName = p['Nombre'] || p['Nombre '] || p['Name'] || p['nombre'] || p['NAME'] || '';
 
-  // 2. Otras columnas comunes
-  const possibleNameKeys = ['Name', 'Player', 'Jugador', 'Inf', 'nombre', 'NAME'];
-  for (const key of possibleNameKeys) {
-    if (p[key] && p[key].trim().length > 2 && p[key] !== '-' && p[key] !== '--') {
-      return p[key].trim();
+  rawName = rawName.trim();
+
+  // Si está vacío, buscar cualquier columna que parezca un nombre
+  if (!rawName || rawName === '-' || rawName === '--') {
+    for (const key of Object.keys(p)) {
+      const val = (p[key] || '').trim();
+      if (val.length > 5 && /[a-záéíóúñ]/i.test(val) && val.includes(' - ')) {
+        rawName = val;
+        break;
+      }
     }
   }
 
-  // 3. Buscar cualquier valor que parezca un nombre completo (contiene letras + posiblemente " - ")
-  for (const key of Object.keys(p)) {
-    const val = (p[key] || '').trim();
-    if (
-      val.length > 5 &&
-      /[a-záéíóúñA-ZÁÉÍÓÚÑ]/.test(val) &&          // tiene letras
-      !/^\d+([.,]\d+)?%?$/.test(val) &&             // no es solo un número
-      !val.includes('€') &&
-      !val.includes('/90') &&
-      !val.toLowerCase().includes('pase') &&
-      !val.toLowerCase().includes('dist')
-    ) {
-      return val;
-    }
+  if (!rawName || rawName === '-' || rawName === '--') {
+    return 'Desconocido';
   }
 
-  // 4. Último recurso: la primera columna que tenga texto decente
-  for (const key of Object.keys(p)) {
-    const val = (p[key] || '').trim();
-    if (val.length > 3 && /[a-zA-Záéíóúñ]/.test(val)) {
-      return val;
-    }
+  // 2. Quitar la nacionalidad (todo lo que va después de " - ")
+  // Ejemplo: "Luis Fernández - Español" → "Luis Fernández"
+  if (rawName.includes(' - ')) {
+    rawName = rawName.split(' - ')[0].trim();
   }
 
-  return 'Desconocido';
+  return rawName;
 }
-function getPlayerPosition(p) {
+
+  function getPlayerPosition(p) {
   if (p['Posición'] && p['Posición'].trim()) return p['Posición'].trim();
   if (p['Posicion'] && p['Posicion'].trim()) return p['Posicion'].trim();
   if (p['Position'] && p['Position'].trim()) return p['Position'].trim();
