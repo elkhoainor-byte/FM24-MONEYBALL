@@ -101,12 +101,9 @@ const roleProfiles = {
   name: "Carrilero Derecho – Apoyo",
   description: "Solo laterales derechos · % Pase > 80% · Ent P > 65%",
   positions: [
-    "DF (D)", "DF (DC)", "DF (DI)", "DF (DIC)",
-    "DF/CR (D)", "DF/CR (DI)",
-    "DF/CR/ME (D)", "DF/CR/ME/MP (D)",
-    "DF/CR/MP (D)",
-    "DF/ME (D)", "DF/ME/MP (D)",
-    "DF/MP (D)"
+  "DF (D)", "DF (DC)", "DF (DI)", "DF (DIC)",
+  "DF/CR (D)", "DF/ME (D)", "DF/MP (D)",
+  "DF/CR/ME (D)", "DF/CR/MP (D)", "DF/ME/MP (D)", "DF/CR/ME/MP (D)"
   ],
   discard: [
     { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 80 },
@@ -128,13 +125,10 @@ WBL: {
   name: "Carrilero Izquierdo – Apoyo",
   description: "Solo laterales izquierdos · % Pase > 80% · Ent P > 65%",
   positions: [
-    "DF (I)", "DF (IC)", "DF (DI)", "DF (DIC)",
-    "DF/CR (I)", "DF/CR (DI)",
-    "DF/CR/ME (I)", "DF/CR/ME/MP (I)",
-    "DF/CR/MP (I)",
-    "DF/ME (I)", "DF/ME/MP (I)",
-    "DF/MP (I)"
-  ],
+  "DF (I)", "DF (IC)", "DF (DI)", "DF (DIC)",
+  "DF/CR (I)", "DF/ME (I)", "DF/MP (I)",
+  "DF/CR/ME (I)", "DF/CR/MP (I)", "DF/ME/MP (I)", "DF/CR/ME/MP (I)"
+],
   discard: [
     { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 80 },
     { keys: ["ENT P", "Ent P", "Ratio entradas completadas", "Ratio de entradas"], mustBeGreaterThan: 65 }
@@ -153,7 +147,7 @@ WBL: {
   CB: {
   name: "Defensa con Toque – Defensa",
   description: "Centrales · Errores = 0 · % Pase > 86% · Cabezazos > 65%",
-  positions: ["DF (C)", "DC", "CENTRAL"],   // ya no hace falta poner todas
+  positions: ["DF (C)", "DF (DC)", "DF (IC)", "DF (DIC)", "DF/ME (C)"],
   discard: [
     { keys: ["GL ERR", "Errores que costaron goles", "errores que costaron goles"], mustBe: 0 },
     { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 86 },
@@ -288,46 +282,59 @@ function getName(p) {
 
 function matchesPosition(playerPos, allowed) {
   if (!playerPos) return false;
-  
-  // Normalizamos la posición del jugador
-  let pos = playerPos.toUpperCase()
-    .replace(/\s+/g, ' ')
-    .replace(/[()]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
 
-  // === CASO ESPECIAL: CENTRALES (CB) ===
-  if (allowed.some(a => a.includes("DF (C)") || a.includes("DC") || a === "CENTRAL")) {
-    // Cualquier cosa que contenga estas palabras se considera central
-    const isCentral = 
-      pos.includes("DF C") || 
-      pos.includes("DF DC") || 
-      pos.includes("DF IC") || 
-      pos.includes("DF DIC") ||
-      pos.includes("DF ME C") ||
-      pos.includes("DC") ||
-      pos.includes("CENTRAL") ||
-      pos === "C" ||
-      pos.startsWith("DF C") ||
-      (pos.includes("DF") && pos.includes("C") && !pos.includes("D ") && !pos.includes("I ")); // evita laterales
+  const pos = playerPos.toUpperCase().replace(/\s+/g, ' ').trim();
 
-    if (isCentral) return true;
+  // ===================== CENTRALES (CB) =====================
+  if (allowed.some(a => a.includes("DF (C)") || a.includes("DC") || a.includes("CENTRAL"))) {
+    return (
+      pos.includes("DF (C)") ||
+      pos.includes("DF (DC)") ||
+      pos.includes("DF (IC)") ||
+      pos.includes("DF (DIC)") ||
+      pos.includes("DF/ME (C)") ||
+      pos.includes("DF/ME(C)") ||
+      pos === "DC" ||
+      pos === "DF C"
+    );
   }
 
-  // === CASO ESPECIAL: PORTEROS (GK) ===
-  if (allowed.includes("POR") || allowed.includes("GK")) {
-    if (pos.includes("POR") || pos.includes("GK") || pos.includes("PORTERO") || pos === "G") {
-      return true;
-    }
+  // ===================== PORTEROS =====================
+  if (allowed.includes("POR") || allowed.some(a => a === "GK")) {
+    return pos.includes("POR") || pos.includes("GK") || pos.includes("PORTERO");
   }
 
-  // === Resto de roles (lógica normal) ===
-  return allowed.some(a => {
-    const cleanAllowed = a.toUpperCase().replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
-    return pos.includes(cleanAllowed) || cleanAllowed.includes(pos);
-  });
+  // ===================== CARRILERO DERECHO (WBR) =====================
+  if (allowed.some(a => a.includes("(D)") && !a.includes("(I)"))) {
+    // Acepta todo lo que pueda jugar por la derecha
+    return (
+      pos.includes("DF (D)") ||
+      pos.includes("DF (DC)") ||          // polivalente central + derecho
+      pos.includes("DF (DI)") ||
+      pos.includes("DF (DIC)") ||
+      pos.includes("(D)") ||
+      pos.includes("DI") ||
+      pos.includes("DIC")
+    ) && !pos.includes("DF (I)") && !pos.includes("DF (IC)"); // evita puros izquierdos
+  }
+
+  // ===================== CARRILERO IZQUIERDO (WBL) =====================
+  if (allowed.some(a => a.includes("(I)") && !a.includes("(D)"))) {
+    // Acepta todo lo que pueda jugar por la izquierda
+    return (
+      pos.includes("DF (I)") ||
+      pos.includes("DF (IC)") ||          // polivalente central + izquierdo
+      pos.includes("DF (DI)") ||
+      pos.includes("DF (DIC)") ||
+      pos.includes("(I)") ||
+      pos.includes("DI") ||
+      pos.includes("DIC")
+    ) && !pos.includes("DF (D)") && !pos.includes("DF (DC)"); // evita puros derechos
+  }
+
+  // Resto de roles
+  return allowed.some(a => pos.includes(a.toUpperCase()));
 }
-
 function parse(raw) {
   if (!raw) return [];
   if (raw.includes('<table') || raw.includes('<tr')) {
