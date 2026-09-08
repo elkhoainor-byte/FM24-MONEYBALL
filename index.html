@@ -33,7 +33,8 @@
     <h2>1. Elige el rol</h2>
     <select id="roleSelect">
       <option value="GK">Portero Cierre – Ataque</option>
-      <option value="WB">Carrilero – Apoyo</option>
+      <option value="WBR">Carrilero Derecho – Apoyo</option>
+      <option value="WBL">Carrilero Izquierdo – Apoyo</option>
       <option value="CB">Defensa con Toque – Defensa</option>
       <option value="DM">Pivote Organizador – Defensa</option>
       <option value="CM">Centrocampista – Apoyo</option>
@@ -85,17 +86,59 @@ const roleProfiles = {
       { keys: ["REG/90", "Regates/90", "Regates realizados/90", "REG"], weight: 0.05 }
     ]
   },
-  WB: {
-    name: "Carrilero – Apoyo",
-    positions: ["DF"],
-    metrics: [
-      {keys:["presiones"], weight:2.0},
-      {keys:["pases progresivos"], weight:1.7},
-      {keys:["centros"], weight:1.5},
-      {keys:["distancia cubierta"], weight:1.3},
-      {keys:["% pase"], weight:1.2}
-    ]
-  },
+  WBR: {
+  name: "Carrilero Derecho – Apoyo",
+  description: "Solo laterales derechos · % Pase > 80% · Ent P > 65%",
+  positions: [
+    "DF (D)", "DF (DC)", "DF (DI)", "DF (DIC)",
+    "DF/CR (D)", "DF/CR (DI)",
+    "DF/CR/ME (D)", "DF/CR/ME/MP (D)",
+    "DF/CR/MP (D)",
+    "DF/ME (D)", "DF/ME/MP (D)",
+    "DF/MP (D)"
+  ],
+  discard: [
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 80 },
+    { keys: ["ENT P", "Ent P", "Ratio entradas completadas", "Ratio de entradas"], mustBeGreaterThan: 65 }
+  ],
+  metrics: [
+    { keys: ["DIST/90", "Distancia cubierta/90", "Distancia", "DIST"], weight: 0.15 },
+    { keys: ["ESPRINTS/90", "Esprints de alta intensidad/90", "Esprints", "ESPRINTS"], weight: 0.15 },
+    { keys: ["ENT P", "Ent P", "Ratio entradas completadas", "Ratio de entradas"], weight: 0.15 },
+    { keys: ["POS GAN/90", "Posesiones ganadas/90", "POS GAN", "Rob/90"], weight: 0.10 },
+    { keys: ["CEN C-JA/90", "Centros completados en juego abierto/90", "CEN C-JA", "Centros"], weight: 0.15 },
+    { keys: ["P CLV-J AB/90", "Pases clave en juego abierto/90", "P CLV-J AB", "Pases clave"], weight: 0.10 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados"], weight: 0.10 },
+    { keys: ["PASES PROG/90", "Pases progresivos/90", "PASES PROG", "Pases progresivos"], weight: 0.10 }
+  ]
+},
+
+WBL: {
+  name: "Carrilero Izquierdo – Apoyo",
+  description: "Solo laterales izquierdos · % Pase > 80% · Ent P > 65%",
+  positions: [
+    "DF (I)", "DF (IC)", "DF (DI)", "DF (DIC)",
+    "DF/CR (I)", "DF/CR (DI)",
+    "DF/CR/ME (I)", "DF/CR/ME/MP (I)",
+    "DF/CR/MP (I)",
+    "DF/ME (I)", "DF/ME/MP (I)",
+    "DF/MP (I)"
+  ],
+  discard: [
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 80 },
+    { keys: ["ENT P", "Ent P", "Ratio entradas completadas", "Ratio de entradas"], mustBeGreaterThan: 65 }
+  ],
+  metrics: [
+    { keys: ["DIST/90", "Distancia cubierta/90", "Distancia", "DIST"], weight: 0.15 },
+    { keys: ["ESPRINTS/90", "Esprints de alta intensidad/90", "Esprints", "ESPRINTS"], weight: 0.15 },
+    { keys: ["ENT P", "Ent P", "Ratio entradas completadas", "Ratio de entradas"], weight: 0.15 },
+    { keys: ["POS GAN/90", "Posesiones ganadas/90", "POS GAN", "Rob/90"], weight: 0.10 },
+    { keys: ["CEN C-JA/90", "Centros completados en juego abierto/90", "CEN C-JA", "Centros"], weight: 0.15 },
+    { keys: ["P CLV-J AB/90", "Pases clave en juego abierto/90", "P CLV-J AB", "Pases clave"], weight: 0.10 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados"], weight: 0.10 },
+    { keys: ["PASES PROG/90", "Pases progresivos/90", "PASES PROG", "Pases progresivos"], weight: 0.10 }
+  ]
+},
   CB: {
     name: "Defensa con Toque – Defensa",
     positions: ["DF"],
