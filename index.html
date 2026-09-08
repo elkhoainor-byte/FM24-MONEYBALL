@@ -7,24 +7,27 @@
 <style>
   :root{--bg:#0b1120;--card:#1e293b;--accent:#22d3ee;--text:#e2e8f0;--good:#4ade80;--mid:#facc15;--bad:#f87171}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:20px}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);padding:20px;line-height:1.5}
   .container{max-width:1300px;margin:0 auto}
   h1{font-size:1.8rem;margin-bottom:6px}
   .card{background:var(--card);border-radius:12px;padding:20px;margin-bottom:20px;border:1px solid #334155}
-  select,textarea,input[type=file]{width:100%;background:#0f172a;border:1px solid #475569;color:var(--text);padding:12px;border-radius:8px;font-size:15px;margin-top:8px}
+  select,textarea,input[type=file],input[type=checkbox]{background:#0f172a;border:1px solid #475569;color:var(--text);padding:10px;border-radius:8px;font-size:15px}
+  select,textarea,input[type=file]{width:100%;margin-top:8px}
   button{background:var(--accent);color:#0f172a;border:none;padding:13px 28px;border-radius:8px;font-weight:700;cursor:pointer;margin-top:12px;font-size:15px}
+  button:hover{filter:brightness(1.1)}
   .top3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:16px}
   .player-card{background:#0f172a;border-radius:10px;padding:16px;border-left:5px solid var(--accent)}
   .player-card h3{font-size:1.15rem;margin-bottom:4px}
   .score{font-size:1.7rem;font-weight:800;margin:8px 0}
   .score-high{color:var(--good)}.score-mid{color:var(--mid)}.score-low{color:var(--bad)}
   .stats-list{font-size:13px;margin-top:8px;opacity:.9}
+  .info{font-size:13px;opacity:.75;margin:8px 0}
 </style>
 </head>
 <body>
 <div class="container">
   <h1>⚽ FM24 Moneyball</h1>
-  <p style="opacity:.8;margin-bottom:20px">Prueba pegando la tabla (no el archivo .html)</p>
+  <p style="opacity:.8;margin-bottom:20px">Filtrado por posición + comparación con tu plantilla</p>
 
   <div class="card">
     <h2>1. Elige el rol</h2>
@@ -36,55 +39,54 @@
       <option value="CM">Centrocampista – Apoyo</option>
       <option value="AP">Organizador Adelantado – Ataque</option>
       <option value="IF">Delantero Interior – Apoyo</option>
-      <option value="F9" selected>Falso Nueve – Apoyo</option>
+      <option value="F9">Falso Nueve – Apoyo</option>
     </select>
   </div>
 
   <div class="card">
-  <h2>2. Datos</h2>
-  
-  <p style="font-size:13px;opacity:.7;margin-bottom:8px">
-    Archivo del <strong>mercado</strong> (jugadores a evaluar)
-  </p>
-  <input type="file" id="fileInput" accept=".html,.htm,.csv,.txt">
-  
-  <p style="font-size:13px;opacity:.7;margin:16px 0 8px">
-    Archivo de tu <strong>plantilla actual</strong> (opcional - para comparar)
-  </p>
-  <input type="file" id="squadInput" accept=".html,.htm,.csv,.txt">
-  
-  <div style="margin:16px 0; display:flex; align-items:center; gap:12px;">
-    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-      <input type="checkbox" id="useDiscard" checked style="width:18px; height:18px;">
-      <span>Aplicar filtros de descarte previo</span>
-    </label>
+    <h2>2. Datos</h2>
+    
+    <p class="info">Archivo del <strong>mercado</strong> (jugadores a evaluar)</p>
+    <input type="file" id="fileInput" accept=".html,.htm,.csv,.txt">
+    
+    <p class="info" style="margin-top:16px">Archivo de tu <strong>plantilla actual</strong> (opcional)</p>
+    <input type="file" id="squadInput" accept=".html,.htm,.csv,.txt">
+    
+    <div style="margin:16px 0;display:flex;align-items:center;gap:10px">
+      <input type="checkbox" id="useDiscard" checked style="width:18px;height:18px">
+      <label for="useDiscard">Aplicar filtros de descarte previo</label>
+    </div>
+
+    <textarea id="rawData" rows="6" placeholder="O pega aquí la tabla del mercado..."></textarea>
+    <button onclick="calculate()">Calcular Top 3</button>
   </div>
 
-  <textarea id="rawData" rows="6" placeholder="O pega aquí la tabla del mercado..."></textarea>
-  <button onclick="calculate()">Calcular Top 3</button>
+  <div class="card">
+    <h2>3. Resultados</h2>
+    <div id="results"><p style="opacity:.6">Aquí aparecerán los resultados</p></div>
+  </div>
 </div>
 
 <script>
 const roleProfiles = {
   GK: {
-  name: "Portero Cierre – Ataque",
-  description: "Solo POR · Errores = 0 · % Pase > 80%",
-  positions: ["POR"],
-  discard: [
-    { keys: ["GL ERR", "Errores que costaron goles", "errores que costaron goles"], mustBe: 0 },
-    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 80 }
-  ],
-  metrics: [
-    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], weight: 0.35 },
-    { keys: ["XGE/90", "xGE/90", "Goles esperados evitados/90", "xg evitados/90", "XGE"], weight: 0.25 },
-    { keys: ["DIST/90", "Distancia cubierta/90", "Distancia", "DIST"], weight: 0.20 },
-    { keys: ["PASES PROG/90", "Pases progresivos/90", "Pases prog/90", "PASES PROG"], weight: 0.15 },
-    { keys: ["REG/90", "Regates/90", "Regates realizados/90", "REG"], weight: 0.05 }
-  ]
-},
+    name: "Portero Cierre – Ataque",
+    description: "Solo POR · Errores = 0 · % Pase > 80%",
+    positions: ["POR"],
+    discard: [
+      { keys: ["GL ERR", "Errores que costaron goles", "errores que costaron goles"], mustBe: 0 },
+      { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 80 }
+    ],
+    metrics: [
+      { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], weight: 0.35 },
+      { keys: ["XGE/90", "xGE/90", "Goles esperados evitados/90", "xg evitados/90", "XGE"], weight: 0.25 },
+      { keys: ["DIST/90", "Distancia cubierta/90", "Distancia", "DIST"], weight: 0.20 },
+      { keys: ["PASES PROG/90", "Pases progresivos/90", "Pases prog/90", "PASES PROG"], weight: 0.15 },
+      { keys: ["REG/90", "Regates/90", "Regates realizados/90", "REG"], weight: 0.05 }
+    ]
+  },
   WB: {
     name: "Carrilero – Apoyo",
-    description: "Laterales / Carrileros (DF)",
     positions: ["DF"],
     metrics: [
       {keys:["presiones"], weight:2.0},
@@ -96,7 +98,6 @@ const roleProfiles = {
   },
   CB: {
     name: "Defensa con Toque – Defensa",
-    description: "Centrales (DF)",
     positions: ["DF"],
     metrics: [
       {keys:["pases progresivos"], weight:1.9},
@@ -109,333 +110,8 @@ const roleProfiles = {
   },
   DM: {
     name: "Pivote Organizador – Defensa",
-    description: "Pivotes (MC)",
     positions: ["MC"],
     metrics: [
       {keys:["pases progresivos"], weight:1.8},
       {keys:["% pase"], weight:1.5},
-      {keys:["rob/90","posesiones ganadas"], weight:1.7},
-      {keys:["presiones"], weight:1.4},
-      {keys:["pases clave"], weight:1.2}
-    ]
-  },
-  CM: {
-    name: "Centrocampista – Apoyo",
-    description: "Centrocampistas (ME)",
-    positions: ["ME"],
-    metrics: [
-      {keys:["presiones"], weight:2.0},
-      {keys:["pases progresivos"], weight:1.7},
-      {keys:["distancia cubierta"], weight:1.4},
-      {keys:["rob/90"], weight:1.3},
-      {keys:["pases clave"], weight:1.2}
-    ]
-  },
-  AP: {
-    name: "Organizador Adelantado – Ataque",
-    description: "Organizador Adelantado (ME)",
-    positions: ["ME"],
-    metrics: [
-      {keys:["pases clave"], weight:2.2},
-      {keys:["ocasiones claras"], weight:2.0},
-      {keys:["pases progresivos"], weight:1.6},
-      {keys:["xg","goles esperados"], weight:1.4}
-    ]
-  },
-  IF: {
-    name: "Delantero Interior – Apoyo",
-    description: "Extremos / Interiores (MP)",
-    positions: ["MP"],
-    metrics: [
-      {keys:["ocasiones claras"], weight:2.0},
-      {keys:["pases clave"], weight:1.8},
-      {keys:["xg"], weight:1.6},
-      {keys:["pases progresivos"], weight:1.4},
-      {keys:["presiones"], weight:1.3}
-    ]
-  },
-  F9: {
-    name: "Falso Nueve – Apoyo",
-    description: "Delanteros (DL)",
-    positions: ["DL"],
-    metrics: [
-      {keys:["ocasiones claras"], weight:2.3},
-      {keys:["pases clave"], weight:2.1},
-      {keys:["pases progresivos"], weight:1.6},
-      {keys:["xg","goles esperados"], weight:1.5},
-      {keys:["presiones"], weight:1.4}
-    ]
-  }
-};
-
-  let squadPlayers = []; // Aquí guardaremos tu plantilla
-  
-function matchesPosition(playerPos, allowed) {
-  if (!playerPos) return false;
-  const pos = playerPos.toUpperCase().replace(/\s+/g, '');
-  return allowed.some(a => pos.includes(a.toUpperCase()));
-}
-  
-function normalize(s) {
-  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\/\%]/g,' ').replace(/\s+/g,' ').trim();
-}
-
-function findValue(p, keys) {
-  for (const k of keys) {
-    const nk = normalize(k);
-    for (const pk of Object.keys(p)) {
-      if (normalize(pk).includes(nk) || nk.includes(normalize(pk))) {
-        const val = parseFloat(String(p[pk]).replace(',','.').replace(/[^\d.-]/g,''));
-        if (!isNaN(val)) return {val, col: pk};
-      }
-    }
-  }
-  return {val:0, col:null};
-}
-
-function getName(p) {
-  // Intento 1: columna exacta "Nombre"
-  if (p['Nombre'] && p['Nombre'].trim().length > 3) return p['Nombre'].trim();
-
-  // Intento 2: buscar cualquier valor que parezca nombre + nacionalidad
-  for (const key of Object.keys(p)) {
-    const v = (p[key]||'').trim();
-    if (v.length > 6 && v.includes(' - ') && /[a-záéíóúñ]/i.test(v) && !v.includes('€') && !v.includes('%')) {
-      return v;
-    }
-  }
-
-  // Intento 3: cualquier texto largo con letras
-  for (const key of Object.keys(p)) {
-    const v = (p[key]||'').trim();
-    if (v.length > 5 && /[a-záéíóúñ]{3,}/i.test(v) && !/^\d/.test(v) && !v.includes('€') && !v.includes('%') && !v.includes('/90')) {
-      return v;
-    }
-  }
-  return 'Desconocido';
-}
-
-function getPlayerPosition(p) {
-  // Prioridad a la columna exacta
-  if (p['Posición'] && p['Posición'].trim()) return p['Posición'].trim();
-  if (p['Posicion'] && p['Posicion'].trim()) return p['Posicion'].trim();
-  if (p['Position'] && p['Position'].trim()) return p['Position'].trim();
-  if (p['Pos'] && p['Pos'].trim()) return p['Pos'].trim();
-
-  // Búsqueda de emergencia por si el nombre de la columna es raro
-  for (const key of Object.keys(p)) {
-    const k = key.toLowerCase();
-    if (k.includes('posici') || k.includes('position') || k === 'pos') {
-      return (p[key] || '').trim();
-    }
-  }
-  return '';
-}
-  
-function calculate() {
-  const raw = document.getElementById('rawData').value.trim();
-  if (!raw && !document.getElementById('fileInput').files.length) {
-    return alert('Sube o pega los datos del mercado');
-  }
-
-  const allPlayers = parse(raw || document.getElementById('rawData').value);
-  if (allPlayers.length === 0) return alert('No se detectaron jugadores en el mercado');
-
-  const roleKey = document.getElementById('roleSelect').value;
-  const role = roleProfiles[roleKey];
-  const useDiscard = document.getElementById('useDiscard').checked;
-
-  // 1. Filtro por posición
-  let players = allPlayers.filter(p => {
-    const pos = getPlayerPosition(p);
-    return matchesPosition(pos, role.positions);
-  });
-
-  // 2. Filtros de descarte (solo si está activado el checkbox)
-  if (useDiscard && role.discard) {
-    players = players.filter(p => {
-      return role.discard.every(rule => {
-        const result = findValue(p, rule.keys);
-        const val = result.val;
-
-        if (rule.mustBe !== undefined) return val === rule.mustBe;
-        if (rule.mustBeGreaterThan !== undefined) return val > rule.mustBeGreaterThan;
-        return true;
-      });
-    });
-  }
-
-  if (players.length === 0) {
-    document.getElementById('results').innerHTML = `
-      <p style="color:#f87171">
-        No hay jugadores que cumplan los filtros de este rol.<br>
-        Se analizaron ${allPlayers.length} jugadores en total.
-      </p>`;
-    return;
-  }
-
-  // 3. Calcular puntuación
-  const scored = players.map(p => {
-    let score = 0;
-    const details = [];
-
-    role.metrics.forEach(m => {
-      const r = findValue(p, m.keys);
-      const contribution = r.val * m.weight;
-      score += contribution;
-      if (r.val !== 0) {
-        details.push(`${r.col || m.keys[0]}: ${r.val.toFixed(2)} (×${m.weight})`);
-      }
-    });
-
-    // Comparar con la plantilla (si se ha subido)
-    let comparison = '';
-    if (squadPlayers.length > 0) {
-      const currentBest = squadPlayers
-        .filter(s => matchesPosition(getPlayerPosition(s), role.positions))
-        .map(s => {
-          let sScore = 0;
-          role.metrics.forEach(m => {
-            sScore += findValue(s, m.keys).val * m.weight;
-          });
-          return sScore;
-        })
-        .sort((a,b) => b - a)[0] || 0;
-
-      if (score > currentBest) {
-        comparison = `<div style="color:#4ade80; font-size:12px; margin-top:4px;">↑ Mejor que tu actual (${currentBest.toFixed(1)})</div>`;
-      } else {
-        comparison = `<div style="color:#f87171; font-size:12px; margin-top:4px;">↓ Peor que tu actual (${currentBest.toFixed(1)})</div>`;
-      }
-    }
-
-    return {
-      name: getName(p),
-      age: p.Edad || p.Age || '',
-      club: p.Club || '',
-      pos: getPlayerPosition(p),
-      score: Math.round(score * 100) / 100,
-      details,
-      comparison
-    };
-  });
-
-  scored.sort((a, b) => b.score - a.score);
-  const top = scored.filter(p => p.name !== 'Desconocido').slice(0, 3);
-
-  let html = `<p>
-    <strong>${role.name}</strong> · 
-    ${players.length} jugadores cumplen los filtros 
-    (de ${allPlayers.length} totales)
-    ${useDiscard ? ' · Filtros de descarte <strong>ACTIVADOS</strong>' : ' · Filtros de descarte desactivados'}
-  </p>
-  <div class="top3">`;
-
-  top.forEach((p, i) => {
-    const cls = p.score >= 30 ? 'score-high' : p.score >= 20 ? 'score-mid' : 'score-low';
-    html += `
-      <div class="player-card">
-        <div style="font-size:12px;opacity:.6">#${i+1}</div>
-        <h3>${p.name}</h3>
-        <div style="font-size:13px;opacity:.8">
-          ${p.age ? p.age + ' años' : ''} 
-          ${p.pos ? '· ' + p.pos : ''} 
-          ${p.club ? '· ' + p.club : ''}
-        </div>
-        <div class="score ${cls}">${p.score}</div>
-        ${p.comparison || ''}
-        <div class="stats-list">
-          ${p.details.map(d => `<div>${d}</div>`).join('')}
-        </div>
-      </div>`;
-  });
-
-  document.getElementById('results').innerHTML = html + '</div>';
-}
-
-    return {
-      name: getName(p),
-      age: p.Edad || p.Age || '',
-      club: p.Club || '',
-      pos: getPlayerPosition(p),
-      score: Math.round(score * 100) / 100,
-      details
-    };
-  });
-
-  scored.sort((a, b) => b.score - a.score);
-  const top = scored.filter(p => p.name !== 'Desconocido').slice(0, 3);
-
-  let html = `<p><strong>${role.name}</strong> · ${players.length} jugadores cumplen los filtros (de ${allPlayers.length} totales)</p>
-              <div class="top3">`;
-
-  top.forEach((p, i) => {
-    const cls = p.score >= 30 ? 'score-high' : p.score >= 20 ? 'score-mid' : 'score-low';
-    html += `
-      <div class="player-card">
-        <div style="font-size:12px;opacity:.6">#${i+1}</div>
-        <h3>${p.name}</h3>
-        <div style="font-size:13px;opacity:.8">
-          ${p.age ? p.age + ' años' : ''} 
-          ${p.pos ? '· ' + p.pos : ''} 
-          ${p.club ? '· ' + p.club : ''}
-        </div>
-        <div class="score ${cls}">${p.score}</div>
-        <div class="stats-list">
-          ${p.details.map(d => `<div>${d}</div>`).join('')}
-        </div>
-      </div>`;
-  });
-
-  document.getElementById('results').innerHTML = html + '</div>';
-}
-
-function parse(raw) {
-  if (raw.includes('<table') || raw.includes('<tr')) {
-    const div = document.createElement('div');
-    div.innerHTML = raw;
-    const rows = [...div.querySelectorAll('tr')];
-    let header = rows.find(r => r.textContent.includes('Nombre') || r.textContent.includes('Name')) || rows[0];
-    const headers = [...header.querySelectorAll('th,td')].map(c => c.textContent.trim());
-    const start = rows.indexOf(header) + 1;
-    return rows.slice(start).map(row => {
-      const cells = [...row.querySelectorAll('td')];
-      const obj = {};
-      headers.forEach((h,i) => obj[h] = cells[i]?.textContent.trim() || '');
-      return obj;
-    }).filter(p => Object.values(p).some(v => v.length > 2));
-  }
-  // texto plano
-  const lines = raw.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length < 2) return [];
-  const sep = lines[0].includes('\t') ? '\t' : lines[0].includes(';') ? ';' : ',';
-  const headers = lines[0].split(sep).map(h => h.trim());
-  return lines.slice(1).map(l => {
-    const cells = l.split(sep);
-    const obj = {};
-    headers.forEach((h,i) => obj[h] = (cells[i]||'').trim());
-    return obj;
-  });
-}
-
-document.getElementById('fileInput').addEventListener('change', e => {
-  const f = e.target.files[0];
-  if (!f) return;
-  const r = new FileReader();
-  r.onload = ev => document.getElementById('rawData').value = ev.target.result;
-  r.readAsText(f, 'UTF-8');
-
-  document.getElementById('squadInput').addEventListener('change', e => {
-  const f = e.target.files[0];
-  if (!f) return;
-  const r = new FileReader();
-  r.onload = ev => {
-    squadPlayers = parse(ev.target.result);
-    console.log(`Plantilla cargada: ${squadPlayers.length} jugadores`);
-  };
-  r.readAsText(f, 'UTF-8');
-});
-});
-</script>
-</body>
-</html>
+      {keys:["
