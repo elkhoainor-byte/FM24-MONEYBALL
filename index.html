@@ -187,16 +187,28 @@ WBL: {
   ]
 },
   CM: {
-    name: "Centrocampista – Apoyo",
-    positions: ["ME"],
-    metrics: [
-      {keys:["presiones"], weight:2.0},
-      {keys:["pases progresivos"], weight:1.7},
-      {keys:["distancia cubierta"], weight:1.4},
-      {keys:["rob/90"], weight:1.3},
-      {keys:["pases clave"], weight:1.2}
-    ]
-  },
+  name: "Centrocampista – Apoyo",
+  description: "Solo ME (C) · MC, ME (C) · ME/MP (C) · Errores = 0 · % Pase > 83%",
+  positions: [
+    "ME (C)",
+    "MC, ME (C)",
+    "ME/MP (C)"
+  ],
+  discard: [
+    { keys: ["GL ERR", "Errores que costaron goles", "errores que costaron goles"], mustBe: 0 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 83 }
+  ],
+  metrics: [
+    { keys: ["P CLV-J AB/90", "Pases clave en juego abierto/90", "P CLV-J AB", "Pases clave"], weight: 0.15 },
+    { keys: ["OC C/90", "Ocasiones creadas/90", "OC C", "Ocasiones creadas"], weight: 0.10 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], weight: 0.10 },
+    { keys: ["DIST/90", "Distancia cubierta/90", "Distancia", "DIST"], weight: 0.15 },
+    { keys: ["ESPRINTS/90", "Esprints de alta intensidad/90", "Esprints", "ESPRINTS"], weight: 0.15 },
+    { keys: ["XG-SP/90", "Goles esperados sin penaltis/90", "XG-SP", "xG sin penaltis"], weight: 0.12 },
+    { keys: ["% DISPAROS", "Porcentaje de tiros a puerta", "% Disparos", "% tiros a puerta"], weight: 0.08 },
+    { keys: ["PRES C/90", "Presiones completadas/90", "PRES C", "Presiones completadas"], weight: 0.15 }
+  ]
+},
   AP: {
     name: "Organizador Adelantado – Ataque",
     positions: ["ME"],
@@ -364,6 +376,15 @@ if (roleKey === "WBL") {
 
   // ========== MEDIOCENTRO / PIVOTE (DM) ==========
 if (roleKey === "DM") {
+  if (roleKey === "CM") {
+  return (
+    pos.includes("ME (C)") ||
+    pos.includes("MC, ME (C)") ||
+    pos.includes("MC,ME (C)") ||
+    pos.includes("ME/MP (C)") ||
+    pos.includes("ME / MP (C)")
+  );
+}
   return (
     pos.includes("MC (C)") ||
     pos.includes("MC, ME (C)") ||
