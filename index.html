@@ -164,16 +164,28 @@ WBL: {
   ]
 },
   DM: {
-    name: "Pivote Organizador – Defensa",
-    positions: ["MC"],
-    metrics: [
-      {keys:["pases progresivos"], weight:1.8},
-      {keys:["% pase"], weight:1.5},
-      {keys:["rob/90","posesiones ganadas"], weight:1.7},
-      {keys:["presiones"], weight:1.4},
-      {keys:["pases clave"], weight:1.2}
-    ]
-  },
+  name: "Pivote Organizador – Defensa",
+  description: "Solo MC (C) y MC, ME (C) · Errores = 0 · % Pase > 88% · Ent P > 65%",
+  positions: [
+    "MC (C)",
+    "MC, ME (C)"
+  ],
+  discard: [
+    { keys: ["GL ERR", "Errores que costaron goles", "errores que costaron goles"], mustBe: 0 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], mustBeGreaterThan: 88 },
+    { keys: ["ENT P", "Ent P", "Ratio de entradas completadas", "Ratio entradas", "% Entradas"], mustBeGreaterThan: 65 }
+  ],
+  metrics: [
+    { keys: ["POS GAN/90", "Posesiones ganadas/90", "POS GAN", "Posesiones ganadas"], weight: 0.15 },
+    { keys: ["PRES C/90", "Presiones completadas/90", "PRES C", "Presiones completadas", "Presiones"], weight: 0.10 },
+    { keys: ["ENT P", "Ent P", "Ratio de entradas completadas", "Ratio entradas", "% Entradas"], weight: 0.10 },
+    { keys: ["% PASE", "% Pase", "Ratio de pases completados", "% pase"], weight: 0.20 },
+    { keys: ["PS C/90", "Pases completados/90", "PS C", "Pases completados"], weight: 0.10 },
+    { keys: ["DIST/90", "Distancia cubierta/90", "Distancia", "DIST"], weight: 0.15 },
+    { keys: ["RC G %", "Ratio de cabezazos ganados", "Cabezazos ganados %", "RC G", "% Cabezazos"], weight: 0.10 },
+    { keys: ["RECH/90", "Rechaces/90", "RECH", "Rechaces"], weight: 0.10 }
+  ]
+},
   CM: {
     name: "Centrocampista – Apoyo",
     positions: ["ME"],
@@ -349,6 +361,16 @@ if (roleKey === "WBL") {
 
     return canPlayLeft && !isPureRight;
   }
+
+  // ========== MEDIOCENTRO / PIVOTE (DM) ==========
+if (roleKey === "DM") {
+  return (
+    pos.includes("MC (C)") ||
+    pos.includes("MC, ME (C)") ||
+    pos.includes("MC,ME (C)") ||
+    pos.includes("MC ME (C)")
+  );
+}
 
   // Resto de roles (método normal)
   return allowed.some(a => pos.includes(a.toUpperCase()));
