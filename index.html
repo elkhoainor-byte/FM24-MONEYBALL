@@ -15,7 +15,7 @@
   select,textarea,input[type=file]{width:100%;margin-top:8px}
   button{background:var(--accent);color:#0f172a;border:none;padding:13px 28px;border-radius:8px;font-weight:700;cursor:pointer;margin-top:12px;font-size:15px}
   button:hover{filter:brightness(1.1)}
-  .top3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:16px}
+  .top3{ display: flex; flex-direction: column; gap: 12px; margin-top: 16px; max-height: 70vh; overflow-y: auto; padding-right: 8px; }
   .player-card{background:#0f172a;border-radius:10px;padding:16px;border-left:5px solid var(--accent)}
   .player-card h3{font-size:1.15rem;margin-bottom:4px}
   .score{font-size:1.7rem;font-weight:800;margin:8px 0}
@@ -421,7 +421,7 @@ function calculate() {
   });
 
   scored.sort((a, b) => b.score - a.score);
-  const top = scored.filter(p => p.name !== 'Desconocido').slice(0, 3);
+  const top = scored.filter(p => p.name !== 'Desconocido');
 
   // 4. Jugadores de TU plantilla en esta posición
   const myPlayersInPos = squadPlayers
